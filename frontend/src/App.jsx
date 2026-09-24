@@ -1,7 +1,122 @@
-import HomePage from './HomePage'
+import { useState } from 'react';
+import LoginPage from './LoginPage';
+import ProfilePage from './ProfilePage';
+import './App.css';
 
-function App() {
-  return <HomePage userName="Alex" />
+export default function App() {
+  const [registeredUsers, setRegisteredUsers] = useState([]);
+  const [user, setUser] = useState({
+    username: '',
+    password: '',
+    isLoggedIn: false,
+    isGuest: false,
+    profileImage: null,
+    weight: '165',
+    height: "5'10",
+    goal: 'Build Endurance'
+  });
+
+  const [authError, setAuthError] = useState('');
+  const handleLoginSubmit = (username, password, isRegistering) => {
+    setAuthError('');
+    if (isRegistering) {
+      const userExists = registeredUsers.some(
+        (u) => u.username.toLowerCase() === username.toLowerCase()
+      );
+      if (userExists) {
+        setAuthError('This username is already taken!');
+        return;
+      }
+      const newUser = { 
+        username, 
+        password,
+        profileImage: null,
+        weight: '165',
+        height: "5'10",
+        goal: 'Build Endurance'
+      };
+      setRegisteredUsers((prev) => [...prev, newUser]);
+      setUser({
+        ...newUser,
+        isLoggedIn: true,
+        isGuest: false
+      });
+    } else {
+      const foundUser = registeredUsers.find(
+        (u) => u.username.toLowerCase() === username.toLowerCase()
+      );
+      if (!foundUser) {
+        setAuthError('Username does not exist. Please create an account first!');
+        return;
+      }
+      if (foundUser.password !== password) {
+        setAuthError('Incorrect password. Please try again.');
+        return;
+      }
+      setUser({
+        ...foundUser,
+        isLoggedIn: true,
+        isGuest: false
+      });
+    }
+  };
+  const handleGuest = () => {
+    setAuthError('');
+    setUser({
+      username: 'Guest',
+      password: '',
+      isLoggedIn: true,
+      isGuest: true,
+      profileImage: null,
+      weight: '165',
+      height: "5'10",
+      goal: 'Build Endurance'
+    });
+  };
+  const updateUserData = (field, value) => {
+    if (user.isGuest) {
+      setUser(prev => ({ ...prev, [field]: value }));
+      return;
+    }
+    setRegisteredUsers(prev => prev.map(u => 
+      u.username === user.username ? { ...u, [field]: value } : u
+    ));
+    setUser(prev => ({ ...prev, [field]: value }));
+  };
+  const handleLogout = () => {
+    setUser({
+      username: '',
+      password: '',
+      isLoggedIn: false,
+      isGuest: false,
+      profileImage: null,
+      weight: '165',
+      height: "5'10",
+      goal: 'Build Endurance'
+    });
+  };
+  if (!user.isLoggedIn) {
+    return (
+      <LoginPage 
+        onLoginSubmit={handleLoginSubmit} 
+        onGuestAccess={handleGuest} 
+        errorMessage={authError}
+        clearError={() => setAuthError('')}
+      />
+    );
+  }
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#121212' }}>
+      <ProfilePage 
+        user={user.username} 
+        isGuest={user.isGuest}
+        profileImage={user.profileImage}
+        weight={user.weight}
+        height={user.height}
+        goal={user.goal}
+        onProfileUpdate={updateUserData}
+        onLogout={handleLogout} 
+      />
+    </div>
+  );
 }
-
-export default App
