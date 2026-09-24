@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import HomePage from './HomePage';
+import Sidebar from './components/Sidebar';
 import LoginPage from './LoginPage';
 import ProfilePage from './ProfilePage';
 import './App.css';
@@ -16,6 +18,7 @@ export default function App() {
     goal: 'Build Endurance'
   });
 
+  const [page, setPage] = useState('profile');
   const [authError, setAuthError] = useState('');
   const handleLoginSubmit = (username, password, isRegistering) => {
     setAuthError('');
@@ -84,6 +87,7 @@ export default function App() {
     setUser(prev => ({ ...prev, [field]: value }));
   };
   const handleLogout = () => {
+    setPage('home');
     setUser({
       username: '',
       password: '',
@@ -105,18 +109,29 @@ export default function App() {
       />
     );
   }
+  if (page === 'profile') {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#121212' }}>
-      <ProfilePage 
-        user={user.username} 
+      <Sidebar activePage="profile" onNavigate={setPage} />
+      <ProfilePage
+        user={user.username}
         isGuest={user.isGuest}
         profileImage={user.profileImage}
         weight={user.weight}
         height={user.height}
         goal={user.goal}
         onProfileUpdate={updateUserData}
-        onLogout={handleLogout} 
+        onLogout={handleLogout}
       />
     </div>
+  );
+}
+
+  return (
+    <HomePage
+      userName={user.username}
+      onNavigate={setPage}
+      onLogout={handleLogout}
+    />
   );
 }

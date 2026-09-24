@@ -1,4 +1,3 @@
-import { useState } from "react";
 import NavIcon from "./NavIcon";
 
 /**
@@ -16,22 +15,26 @@ import NavIcon from "./NavIcon";
  * Props: none.
  */
 
-const NAV_ITEMS = ["home", "workouts", "nutrition", "profile"];
+//const NAV_ITEMS = ["home", "workouts", "nutrition", "profile"];
 
-export default function Sidebar() {
-  // TODO(api): drive from GET /api/streak, and route changes instead of local state
-  const [activeNav, setActiveNav] = useState("home");
+// Only these have real pages so far; the rest are ignored for now
+const AVAILABLE_PAGES = ["home", "profile"];
+
+export default function Sidebar({ activePage = "home", onNavigate, onLogout }) {
+  const handleClick = (item) => {
+    if (AVAILABLE_PAGES.includes(item)) onNavigate?.(item);
+  };
 
   return (
     <aside className="sidebar">
       <div className="sidebar-avatar" aria-hidden="true">NH</div>
 
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map((item) => (
+        {AVAILABLE_PAGES.map((item) => (
           <button
             key={item}
-            className={`sidebar-nav-item ${activeNav === item ? "is-active" : ""}`}
-            onClick={() => setActiveNav(item)}
+            className={`sidebar-nav-item ${activePage === item ? "is-active" : ""}`}
+            onClick={() => handleClick(item)}
             type="button"
           >
             <span className="sidebar-nav-icon"><NavIcon name={item} /></span>
