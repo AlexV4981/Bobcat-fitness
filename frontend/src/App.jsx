@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import TempButton from './assets/tempbutton.png'
-import './App.css'
+import { useState } from 'react';
+import HomePage from './HomePage';
+import Sidebar from './components/Sidebar';
+import LoginPage from './LoginPage';
+import ProfilePage from './ProfilePage';
 import Dashboard from './Dashboard/DashboardPage'
+import './App.css';
 
 export default function App() {
   const [registeredUsers, setRegisteredUsers] = useState([]);
