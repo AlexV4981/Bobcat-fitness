@@ -1,7 +1,7 @@
 import tempImage from '../assets/tempbutton.png'
 import tempGraphImage from '../assets/tempGraph.png'
 import Widget from '../components/components'
-import './Dashboard.css'
+import './DashboardPage.css'
 function handleClick(){
   //Will do something later
 }

@@ -4,7 +4,7 @@ import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import TempButton from './assets/tempbutton.png'
 import './App.css'
-import Dashboard from './pages/Dashboard'
+import Dashboard from './Dashboard/DashboardPage'
 
 export default function App() {
   const [registeredUsers, setRegisteredUsers] = useState([]);
