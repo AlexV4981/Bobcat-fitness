@@ -12,32 +12,6 @@ function Dashboard() {
   return (
     <main className="dashboard">
 
-      <section className="dashboard-left-section">
-          <button type="button" onClick={handleClick}>
-            Home
-            <img src={tempImage} alt=""></img>
-          </button>
-
-          <button type="button" onClick={handleClick}>
-            Dashboard
-            <img src={tempImage} alt=""></img>
-          </button>
-
-          <button type="button" onClick={handleClick}>
-            Placeholder
-            <img src={tempImage} alt=""></img>
-          </button>
-
-          <Widget title="Left Side Buttons">
-            <span>Home</span>
-            <span>Dashboard</span>
-            <span>Placeholder</span>
-          </Widget>
-
-        {}
-
-      </section>
-
       <section className="dashboard-center-section">
         <Widget title="In depth graph and proress charts">
           <img src={tempGraphImage} alt =""/>
