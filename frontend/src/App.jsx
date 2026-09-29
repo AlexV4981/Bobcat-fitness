@@ -110,6 +110,14 @@ export default function App() {
       />
     );
   }
+  if (page === 'dashboard') {
+    return (
+      <div className="home">
+        <Sidebar activePage="dashboard" onNavigate={setPage} onLogout={handleLogout} />
+        <Dashboard />
+      </div>
+    );
+  }
   if (page === 'profile') {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#121212' }}>
