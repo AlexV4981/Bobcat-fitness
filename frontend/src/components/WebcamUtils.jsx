@@ -2,13 +2,25 @@ export const CAMERA_ID = 'default'
 export const FRAME_INTERVAL_MS = 100
 
 const MAX_FRAME_WIDTH = 960
+//compression quality is set to 0.8
 const JPEG_QUALITY = 0.8
 
+//builds the websocket URL thats used to upload the camera frames
 export function getCameraWebSocketUrl(cameraId) {
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000'
   const url = new URL(apiBase)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
   url.pathname = `/api/camera/ws/${encodeURIComponent(cameraId)}`
+  url.search = ''
+  url.hash = ''
+  return url.toString()
+}
+
+//builds the HTTP MJPEG camera stream
+export function getProcessedCameraUrl(cameraId) {
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const url = new URL(apiBase)
+  url.pathname = `/api/camera/${encodeURIComponent(cameraId)}/mjpeg`
   url.search = ''
   url.hash = ''
   return url.toString()
