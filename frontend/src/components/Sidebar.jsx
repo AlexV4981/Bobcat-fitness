@@ -18,7 +18,7 @@ import NavIcon from "./NavIcon";
 //const NAV_ITEMS = ["home", "workouts", "nutrition", "profile"];
 
 // Only these have real pages so far; the rest are ignored for now
-const AVAILABLE_PAGES = ["home", "dashboard", "profile"];
+const AVAILABLE_PAGES = ["home", "workouts","dashboard", "profile"];
 
 export default function Sidebar({ activePage = "home", onNavigate, onLogout }) {
   const handleClick = (item) => {

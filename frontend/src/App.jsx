@@ -3,6 +3,7 @@ import HomePage from './HomePage';
 import Sidebar from './components/Sidebar';
 import LoginPage from './LoginPage';
 import ProfilePage from './ProfilePage';
+import WorkoutSchedulePage from "./WorkoutSchedule/WorkoutSchedulePage";
 import Dashboard from './Dashboard/DashboardPage'
 import './App.css';
 
@@ -132,6 +133,18 @@ export default function App() {
       />
     );
   }
+
+  if (page === 'workouts') {
+    return (
+      <div className="home">
+        <Sidebar activePage="workouts" onNavigate={setPage} onLogout={handleLogout} />
+        <main className="content">
+          <WorkoutSchedulePage />
+        </main>
+      </div>
+    );
+  }
+
   if (page === 'dashboard') {
     return (
       <div className="home">
@@ -141,22 +154,24 @@ export default function App() {
     );
   }
   if (page === 'profile') {
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#121212' }}>
-      <Sidebar activePage="profile" onNavigate={setPage} />
-      <ProfilePage
-        user={user.username}
-        isGuest={user.isGuest}
-        profileImage={user.profileImage}
-        weight={user.weight}
-        height={user.height}
-        goal={user.goal}
-        onProfileUpdate={updateUserData}
-        onLogout={handleLogout}
-      />
-    </div>
-  );
-}
+    return (
+      <div className="home">
+        <Sidebar activePage="profile" onNavigate={setPage} onLogout={handleLogout} />
+        <main className="content">
+          <ProfilePage
+            user={user.username}
+            isGuest={user.isGuest}
+            profileImage={user.profileImage}
+            weight={user.weight}
+            height={user.height}
+            goal={user.goal}
+            onProfileUpdate={updateUserData}
+            onLogout={handleLogout}
+          />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <HomePage
