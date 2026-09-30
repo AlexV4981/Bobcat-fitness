@@ -7,7 +7,7 @@ const STREAM_LABELS = {
 
 function WebcamOverlay({ cameraState, streamState }) {
   const isLive = cameraState === 'on' && streamState === 'streaming'
-
+//controls how the status is displayed
   return (
     <div className="camera-overlay" aria-live="polite">
       <span className={isLive ? 'status-dot is-live' : 'status-dot'} aria-hidden="true" />

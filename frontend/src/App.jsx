@@ -1,6 +1,5 @@
 import WebcamConnection from './components/WebcamConnection'
 import './App.css'
-import WebcamConnection from './components/WebcamConnection'
 
 function App() {
   return (

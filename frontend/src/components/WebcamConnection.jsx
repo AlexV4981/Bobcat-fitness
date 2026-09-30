@@ -4,13 +4,16 @@ import {
   CAMERA_ID,
   FRAME_INTERVAL_MS,
   captureVideoFrame,
+  getProcessedCameraUrl,
   getCameraWebSocketUrl,
 } from './WebcamUtils'
 
+//socket_open is the value for the browser to open the websocket.
 const SOCKET_OPEN = 1
 const MAX_BUFFERED_BYTES = 1_000_000
 
 function WebcamConnection() {
+  //refs for video, canvas, media stream, socket, timer, and upload status
   const videoRef = useRef(null)
   const captureCanvasRef = useRef(null)
   const streamRef = useRef(null)
@@ -18,10 +21,12 @@ function WebcamConnection() {
   const frameTimerRef = useRef(null)
   const frameInFlightRef = useRef(false)
 
+  //creates a state variable with the function to change its state
   const [cameraState, setCameraState] = useState('off')
   const [streamState, setStreamState] = useState('offline')
   const [errorMessage, setErrorMessage] = useState('')
 
+  //stops uploading frames but camera is not stopped yet
   const stopFrameUpload = useCallback(() => {
     if (frameTimerRef.current !== null) {
       window.clearInterval(frameTimerRef.current)
@@ -29,6 +34,7 @@ function WebcamConnection() {
     }
     frameInFlightRef.current = false
 
+    //ensures it sets the socket to null when stopped
     if (socketRef.current) {
       socketRef.current.close(1000, 'Camera stopped')
       socketRef.current = null
@@ -36,6 +42,7 @@ function WebcamConnection() {
     setStreamState('offline')
   }, [])
 
+  //stops the camera tracks then clears the video then becomes off
   const stopWebcam = useCallback(() => {
     stopFrameUpload()
 
@@ -48,16 +55,19 @@ function WebcamConnection() {
     setCameraState('off')
   }, [stopFrameUpload])
 
+  //when cmarea starts sets the socketRef to socket and begins to pushframes
   const startFrameUpload = useCallback(() => {
     const socket = new WebSocket(getCameraWebSocketUrl(CAMERA_ID))
     socket.binaryType = 'arraybuffer'
     socketRef.current = socket
     setStreamState('connecting')
 
+    //socket is opened
     socket.addEventListener('open', () => {
       if (socketRef.current !== socket) return
       setStreamState('streaming')
 
+      //schedules the frame capture and uploads
       frameTimerRef.current = window.setInterval(async () => {
         if (
           frameInFlightRef.current ||
@@ -67,6 +77,7 @@ function WebcamConnection() {
           return
         }
 
+        //grabs the video and canvas references
         const video = videoRef.current
         const canvas = captureCanvasRef.current
         if (!video || !canvas || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
@@ -85,6 +96,7 @@ function WebcamConnection() {
       }, FRAME_INTERVAL_MS)
     })
 
+    //listens for error
     socket.addEventListener('error', () => {
       if (socketRef.current === socket) {
         setStreamState('error')
@@ -92,6 +104,7 @@ function WebcamConnection() {
       }
     })
 
+    //listens for close
     socket.addEventListener('close', (event) => {
       if (socketRef.current !== socket) return
       if (frameTimerRef.current !== null) {
@@ -103,6 +116,7 @@ function WebcamConnection() {
     })
   }, [])
 
+  //starts camera and sets the stream to a specific size the browser prefers
   const startWebcam = useCallback(async () => {
     setErrorMessage('')
     setCameraState('starting')
@@ -128,6 +142,7 @@ function WebcamConnection() {
         videoRef.current.srcObject = stream
         await videoRef.current.play()
       }
+      //sets camera state to on and starts uploading frames
       setCameraState('on')
       startFrameUpload()
     } catch (error) {
@@ -160,6 +175,13 @@ function WebcamConnection() {
           muted
           aria-label="Live webcam preview"
         />
+        {isCameraOn && streamState === 'streaming' && (
+          <img
+            className="processed-camera"
+            src={getProcessedCameraUrl(CAMERA_ID)}
+            alt="Live webcam with body skeleton overlay"
+          />
+        )}
         <WebcamOverlay cameraState={cameraState} streamState={streamState} />
       </div>
 
