@@ -1,0 +1,290 @@
+/* WorkoutSchedulePage styles
+ * Everything is scoped under .ws-page / .ws-* so it can't collide with
+ * HomePage.css. Colors are tokens on .ws-page; to match the rest of the app,
+ * point them at your global variables (e.g. --ws-green: var(--accent-dark)).
+ * The chart colors in WorkoutSchedulePage.jsx (CHART_COLORS) should be kept
+ * in sync with these.
+ */
+
+.ws-page {
+  --ws-ink: #0F100E;
+  --ws-muted: #55564F;
+  --ws-muted-strong: #3F403A;
+  --ws-surface: #fff;
+  --ws-border: #EDEDE9;
+  --ws-row-border: #DEDED8;
+  --ws-green: #2C6E49;
+  --ws-orange: #B8641A;
+  --ws-grey-line: #C9C9C2;
+
+  color: var(--ws-ink);
+}
+
+/* ---------- Header ---------- */
+
+.ws-header {
+  margin-bottom: 28px;
+}
+
+.ws-header-dates {
+  font-size: 14px;
+  color: var(--ws-muted);
+  font-weight: 600;
+}
+
+.ws-header-title {
+  color: var(--ws-ink);
+  font-size: 28px;
+  font-weight: 700;
+  margin: 4px 0 0;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Layout ---------- */
+
+.ws-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+  gap: 24px;
+}
+
+.ws-card {
+  background: var(--ws-surface);
+  border: 1px solid var(--ws-border);
+  border-radius: 16px;
+}
+
+/* ---------- Progress chart ---------- */
+
+.ws-chart-card {
+  padding: 24px 20px 12px;
+}
+
+.ws-chart-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.ws-card-title {
+  color: var(--ws-ink);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ws-chart-stats {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ws-muted);
+}
+
+.ws-chart-area {
+  width: 100%;
+  height: 340px;
+  margin-top: 12px;
+}
+
+.ws-legend {
+  display: flex;
+  gap: 16px;
+  padding: 4px 4px 16px;
+}
+
+.ws-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ws-legend-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--swatch);
+}
+
+.ws-legend-swatch--dashed {
+  height: 0;
+  background: transparent;
+  border-top: 2px dashed var(--swatch);
+}
+
+.ws-legend-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ws-muted-strong);
+}
+
+/* ---------- Chart tooltip ---------- */
+
+.ws-tooltip {
+  background: #1C1D1B;
+  color: #F3F2EE;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.ws-tooltip-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ws-tooltip-secondary {
+  opacity: 0.7;
+}
+
+/* ---------- Exercise panel (right side, scrolls) ---------- */
+
+.ws-exercises {
+  padding: 20px 20px 8px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.ws-exercises-title {
+  color: var(--ws-ink);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.ws-exercises-empty {
+  font-size: 14px;
+  color: var(--ws-muted);
+  padding: 8px 4px 16px;
+  margin: 0;
+}
+
+.ws-day {
+  margin-bottom: 18px;
+}
+
+.ws-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 4px;
+  position: sticky;
+  top: 0;
+  background: var(--ws-surface);
+}
+
+.ws-day-label {
+  color: var(--ws-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ws-day-date {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ws-muted);
+}
+
+.ws-exercise-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- Exercise row ---------- */
+
+.ws-exercise-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--ws-row-border);
+}
+
+.ws-check {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--ws-grey-line);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ws-check.is-checked {
+  border-color: var(--ws-green);
+  background: var(--ws-green);
+}
+
+.ws-check:focus-visible {
+  outline: 2px solid var(--ws-green);
+  outline-offset: 2px;
+}
+
+.ws-exercise-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ws-exercise-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ws-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ws-exercise-name.is-done {
+  text-decoration: line-through;
+  color: var(--ws-muted);
+}
+
+.ws-exercise-detail {
+  font-size: 13px;
+  color: var(--ws-muted);
+  margin-top: 1px;
+}
+
+/* ---------- Status pill ---------- */
+
+.ws-status {
+  flex-shrink: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.ws-status--done {
+  background: #DDEFE3;
+  color: #1B4A31;
+}
+
+.ws-status--today {
+  background: #FBE8C6;
+  color: #6B3C08;
+}
+
+.ws-status--missed {
+  background: #F4DDD9;
+  color: #7A2A1F;
+}
+
+.ws-status--upcoming {
+  background: #E9E9E5;
+  color: #3F403A;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 860px) {
+  .ws-grid {
+    grid-template-columns: 1fr;
+  }
+}
