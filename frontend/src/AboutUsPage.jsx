@@ -8,7 +8,7 @@ export default function AboutUs() {
       name: "Hung Nguyen",
       role: "Senior Year CS Major • Business Admin Minor",
       goal: "Want to be a Software Engineer or adjacent industry.",
-      bio: "I like the idea of improving our everyday lives with AI.",
+      bio: "Like the idea of improving our everyday lives with AI.",
       link: "https://www.linkedin.com/in/hungvnguyen922/",
       position: "up"
     },
@@ -17,38 +17,36 @@ export default function AboutUs() {
       name: "Robert Zamora",
       role: "Senior Year CS Major • Math Minor",
       goal: "Want to be in a Management position with plans to pursue an MBA.",
-      bio: "I wanted to learn something new and see what ideas others had.",
+      bio: "Wanting to learn something new and see what ideas others had.",
       link: null,
       position: "down"
     },
     {
       id: 3,
       name: "Daniel Saieh",
-      role: "Senior Year CS Major",
-      goal: "Want to be a Software Engineer.",
-      bio: "Hungry for Programming knowledge.",
+      role: "Senior Year CS Major • Data Analytics Minor",
+      goal: "Pursuing Software Engineer role and creating some insane stuff in the future.",
+      bio: "A person whos hungry for Programming knowledge.",
       link: null,
       position: "up"
     },
     {
       id: 4,
-      name: "TBD",
+      name: "Alex Vargas",
       role: "Team Member Slot",
       goal: "Open Role",
       bio: "Information coming soon.",
       link: null,
       position: "down",
-      isBlank: true
     },
     {
       id: 5,
-      name: "TBD",
+      name: "Ryan McCloskey",
       role: "Team Member Slot",
       goal: "Open Role",
       bio: "Information coming soon.",
       link: null,
-      position: "down",
-      isBlank: true
+      position: "up",
     }
   ];
 
@@ -71,7 +69,7 @@ export default function AboutUs() {
       {/* Zig-Zag Team Section */}
       <section className="team-section">
         <span className="section-label">Who We Are</span>
-        <h2 className="team-title">The People Behind The Project</h2>
+        <h1 className="about-title">The People Behind The Project</h1>
         
         <div className="zigzag-grid">
           {teamMembers.map((member) => (
@@ -90,13 +88,18 @@ export default function AboutUs() {
                     <p className="detail-val">{member.goal}</p>
                   </div>
                   <div className="member-detail">
-                    <span className="detail-label">Motivation</span>
+                    <span className="detail-label">Bio</span>
                     <p className="detail-val">{member.bio}</p>
                   </div>
                   {member.link && (
-                    <span className="linkedin-tag">
-                      LinkedIn Connected
-                    </span>
+                    <a 
+                      href={member.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="linkedin-link"
+                    >
+                      LinkedIn Profile →
+                    </a>
                   )}
                 </>
               ) : (
