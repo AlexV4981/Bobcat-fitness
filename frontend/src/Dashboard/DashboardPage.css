@@ -1,0 +1,32 @@
+
+/* 
+    Main sections start with colors
+    Subsections with buttons have no colors
+    
+*/
+.dashboard {
+    width: 100%;
+    min-height: 100svh;
+    display: grid;
+}
+
+.dashboard-center-section{
+    background-color: #3dff94;
+    color: #242424;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: center;
+    min-width: 0;
+
+}
+
+.dashboard-center-section .widget {
+    width: 100%;
+}
+
+/* .dashboard-right-section{
+    display: flex;
+
+} */
+

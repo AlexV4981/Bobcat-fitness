@@ -3,9 +3,16 @@ import HomePage from './HomePage';
 import Sidebar from './components/Sidebar';
 import LoginPage from './LoginPage';
 import ProfilePage from './ProfilePage';
+import WorkoutSchedulePage from "./WorkoutSchedule/WorkoutSchedulePage";
+import Dashboard from './Dashboard/DashboardPage'
 import './App.css';
 
 export default function App() {
+  /*
+   * STATE MANAGEMENT: This section initializes the application, including a database array for 
+   * the registered objects. It also sets up the active session containing the necessary credentials, 
+   * wellness data, a routing tracker, and an error string to display any issues that pop up.
+   */
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [user, setUser] = useState({
     username: '',
@@ -17,7 +24,12 @@ export default function App() {
     height: "5'10",
     goal: 'Build Endurance'
   });
-
+  
+  /*
+   * AUTHENTICATION HANDLERS: So this block manages identity access by processing user logins and registrations.
+   * It runs duplication checks during sign-ups, validates a match on any saved credentials, 
+   * checks existing records during logins, or builds a basic placeholder profile if a guest logs in.
+   */
   const [page, setPage] = useState('profile');
   const [authError, setAuthError] = useState('');
   const handleLoginSubmit = (username, password, isRegistering) => {
@@ -76,6 +88,12 @@ export default function App() {
       goal: 'Build Endurance'
     });
   };
+  
+  /*
+   * DATA SYNC & LIFE CYCLE: This section updates active profiles and handles any session states.
+   * It targets a mockup database format if a user were to enter the page as a guest, but it maps
+   * those updates directly back into the register if a persistent account is active.
+   */
   const updateUserData = (field, value) => {
     if (user.isGuest) {
       setUser(prev => ({ ...prev, [field]: value }));
@@ -99,6 +117,12 @@ export default function App() {
       goal: 'Build Endurance'
     });
   };
+  
+   /*
+   * ROUTING & TEMPLATE RENDERING: So this serves as the main interface routing layer. It restricts access if the user
+   * is unauthenticated, handles a structured layout framework with sidebar navigation when jumping to the home or profile page, 
+   * and essentially falls back to the main dashboard as the default view.
+   */
   if (!user.isLoggedIn) {
     return (
       <LoginPage 
@@ -109,23 +133,45 @@ export default function App() {
       />
     );
   }
+
+  if (page === 'workouts') {
+    return (
+      <div className="home">
+        <Sidebar activePage="workouts" onNavigate={setPage} onLogout={handleLogout} />
+        <main className="content">
+          <WorkoutSchedulePage />
+        </main>
+      </div>
+    );
+  }
+
+  if (page === 'dashboard') {
+    return (
+      <div className="home">
+        <Sidebar activePage="dashboard" onNavigate={setPage} onLogout={handleLogout} />
+        <Dashboard />
+      </div>
+    );
+  }
   if (page === 'profile') {
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#121212' }}>
-      <Sidebar activePage="profile" onNavigate={setPage} />
-      <ProfilePage
-        user={user.username}
-        isGuest={user.isGuest}
-        profileImage={user.profileImage}
-        weight={user.weight}
-        height={user.height}
-        goal={user.goal}
-        onProfileUpdate={updateUserData}
-        onLogout={handleLogout}
-      />
-    </div>
-  );
-}
+    return (
+      <div className="home">
+        <Sidebar activePage="profile" onNavigate={setPage} onLogout={handleLogout} />
+        <main className="content">
+          <ProfilePage
+            user={user.username}
+            isGuest={user.isGuest}
+            profileImage={user.profileImage}
+            weight={user.weight}
+            height={user.height}
+            goal={user.goal}
+            onProfileUpdate={updateUserData}
+            onLogout={handleLogout}
+          />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <HomePage
