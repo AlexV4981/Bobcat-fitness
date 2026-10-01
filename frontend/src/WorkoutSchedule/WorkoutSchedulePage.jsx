@@ -189,7 +189,7 @@ export function adaptApiPlan(apiPlan) {
 // Chart colors must be JS values (Recharts props). Keep in sync with the
 // tokens at the top of WorkoutSchedulePage.css.
 const CHART_COLORS = {
-  green: "#2C6E49",
+  green: "#c8d629",
   orange: "#D9822B",
   greyLine: "#C9C9C2",
   tickText: "#8A8A83",

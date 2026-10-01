@@ -13,7 +13,7 @@
   --ws-surface: #fff;
   --ws-border: #EDEDE9;
   --ws-row-border: #DEDED8;
-  --ws-green: #2C6E49;
+  --ws-green: #768e5b;
   --ws-orange: #B8641A;
   --ws-grey-line: #C9C9C2;
 
@@ -121,7 +121,7 @@
 
 .ws-tooltip {
   background: #1C1D1B;
-  color: #F3F2EE;
+  color: #f1ecdf;
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 13px;
