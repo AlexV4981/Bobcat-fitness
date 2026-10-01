@@ -7,6 +7,7 @@ import WorkoutSchedulePage from "./WorkoutSchedule/WorkoutSchedulePage";
 import ExercisesPage from "./Exercises/ExercisesPage";
 import Dashboard from './Dashboard/DashboardPage'
 import CameraPage from './Camera/CameraPage';
+import AboutUsPage from './AboutUsPage';
 import './App.css';
 
 export default function App() {
@@ -189,6 +190,14 @@ export default function App() {
             onLogout={handleLogout}
           />
         </main>
+      </div>
+    );
+  }
+  if (page === 'about-us') {
+    return (
+      <div className="home">
+        <Sidebar activePage="about-us" onNavigate={setPage} onLogout={handleLogout} />
+        <AboutUsPage />
       </div>
     );
   }
