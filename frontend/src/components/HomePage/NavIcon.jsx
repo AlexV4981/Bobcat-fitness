@@ -7,7 +7,7 @@
  * inherits text color from its parent button).
  *
  * @param {Object} props
- * @param {"home"|"camera"|"workouts"|"nutrition"|"profile"} props.name - Which icon
+ * @param {"home"|"camera"|"workouts"|"nutrition"|"about-us"|"profile"} props.name - Which icon
  *   to render. Must be a key of ICON_PATHS below.
  */
 
@@ -41,6 +41,14 @@ const ICON_PATHS = {
       <rect x="14" y="14" width="7" height="7" rx="1.5" />
     </>
   ),
+  "about-us": (
+  <>
+    <circle cx="9" cy="8.5" r="3" />
+    <path d="M3.5 19.5c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5" />
+    <circle cx="16.5" cy="9.5" r="2.4" />
+    <path d="M16.5 14.5c2.2 0 3.9 1.3 4.5 4" />
+  </>
+),
   profile: (
     <>
       <circle cx="12" cy="8" r="3.2" />
