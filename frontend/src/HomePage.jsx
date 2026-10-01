@@ -1,5 +1,5 @@
 import "./HomePage.css";
-import { AtAGlance, BestThisWeek, DailyNutrition, FormReview, MySpotlight, PageHeader, Sidebar, TrainingLoad, WorkoutHero } from "./components";
+import { AtAGlance, BestThisWeek, DailyNutrition, FormReview, MySpotlight, PageHeader, Sidebar, TrainingLoad, WorkoutHero } from "./components/HomePage";
 
 /**
  * Bobcat Fitness — Home page

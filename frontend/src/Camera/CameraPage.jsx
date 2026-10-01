@@ -1,5 +1,5 @@
 import { useState } from "react";
-import WebcamConnection from "../components/WebcamConnection";
+import WebcamConnection from "../components/WebCam/WebcamConnection";
 import "./CameraPage.css";
 
 /**
@@ -33,7 +33,7 @@ const EXERCISE_OPTIONS = [
 export default function CameraPage({ history = [], onSaveSet }) {
   const [currentExercise, setCurrentExercise] = useState("Push-up");
   const [repCount, setRepCount] = useState(0);
-
+  
   const incrementReps = () => setRepCount((prev) => prev + 1);
   const decrementReps = () => setRepCount((prev) => (prev > 0 ? prev - 1 : 0));
 

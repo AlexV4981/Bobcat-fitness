@@ -33,6 +33,8 @@ export default function App() {
    */
   const [page, setPage] = useState('profile');
   const [authError, setAuthError] = useState('');
+  const [workoutHistory, setWorkoutHistory] = useState([]);
+  const handleSaveSet = (record) => setWorkoutHistory((prev) => [record, ...prev]);
   const handleLoginSubmit = (username, password, isRegistering) => {
     setAuthError('');
     if (isRegistering) {
