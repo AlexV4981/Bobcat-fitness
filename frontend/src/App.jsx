@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import HomePage from './HomePage';
-import Sidebar from './components/Sidebar';
+import Sidebar from './components/HomePage/Sidebar';
 import LoginPage from './LoginPage';
 import ProfilePage from './ProfilePage';
 import WorkoutSchedulePage from "./WorkoutSchedule/WorkoutSchedulePage";
+import ExercisesPage from "./Exercises/ExercisesPage";
 import Dashboard from './Dashboard/DashboardPage'
 import './App.css';
 
@@ -144,7 +145,14 @@ export default function App() {
       </div>
     );
   }
-
+  if (page === 'exercises') {
+    return (
+      <div className="home">
+        <Sidebar activePage="exercises" onNavigate={setPage} onLogout={handleLogout} />
+        <ExercisesPage />
+      </div>
+    );
+  }
   if (page === 'dashboard') {
     return (
       <div className="home">

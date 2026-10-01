@@ -18,6 +18,12 @@ const ICON_PATHS = {
   workouts: (
     <path d="M6.5 8v8M4 10v4M17.5 8v8M20 10v4M8.5 12h7" />
   ),
+  exercises: (
+    <>
+      <circle cx="12" cy="5.5" r="2" />
+      <path d="M12 8v6m0 0-3 6m3-6 3 6M7 11l5-1 5 1" />
+    </>
+  ),
   nutrition: (
     <path d="M12 3c-2.5 2-2.5 5-1 6.5S14 12 14 15a4 4 0 0 1-8 0c0-2 1-3 1-3M18 3s1 2-1 4" />
   ),

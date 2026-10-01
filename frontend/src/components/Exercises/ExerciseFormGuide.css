@@ -1,0 +1,213 @@
+/* Exercise form guides (Squat, PushUp, PullUp, SitUp)
+   Scoped to .fg. Tokens fall back to the Bobcat palette from HomePage.css, so
+   the guides look right inside a .card and still render if the page tokens are
+   missing. Override any --fg-* variable on a parent to restyle. */
+
+.fg {
+  --fg-ink: var(--ink, #14170f);
+  --fg-soft: var(--ink-soft, #565c4e);
+  --fg-bg: var(--bg, #f1f3ea);
+  --fg-fill: var(--surface, #ffffff);
+  --fg-border: var(--border, #e3e6da);
+  --fg-line: color-mix(in srgb, var(--fg-ink) 28%, transparent);
+
+  --fg-seg-on-bg: var(--hero-bg, #10150e);
+  --fg-seg-on-ink: var(--accent, #c6ff4a);
+
+  --fg-good: #1d7a5c;
+  --fg-good-bg: var(--tint-green, #e9f6e5);
+  --fg-bad: #b93535;
+  --fg-bad-bg: var(--tint-peach, #fbeae6);
+  --fg-info: #3552b8;
+  --fg-info-bg: var(--tint-blue, #e9eefb);
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  color: var(--fg-ink);
+  font-size: 14px;
+}
+
+.fg *,
+.fg *::before,
+.fg *::after {
+  box-sizing: inherit;
+}
+
+.fg-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.fg-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg-ink);
+}
+
+.fg-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A select sitting in a row with the view toggle goes to the far right. */
+.fg-row > .fg-select {
+  margin-left: auto;
+}
+
+.fg-seg,
+.fg-select,
+.fg-play {
+  font: inherit;
+  color: var(--fg-ink);
+  background: var(--fg-fill);
+  border: 1px solid var(--fg-border);
+  border-radius: var(--radius-sm, 10px);
+  cursor: pointer;
+}
+
+.fg-seg {
+  padding: 6px 14px;
+}
+
+.fg-seg[aria-pressed="true"] {
+  background: var(--fg-seg-on-bg);
+  color: var(--fg-seg-on-ink);
+  border-color: var(--fg-seg-on-bg);
+}
+
+.fg-select {
+  min-width: 210px;
+  max-width: 100%;
+  padding: 6px 10px;
+}
+
+.fg-seg:focus-visible,
+.fg-select:focus-visible,
+.fg-play:focus-visible,
+.fg-range:focus-visible,
+.fg-indicator input:focus-visible {
+  outline: 2px solid var(--fg-info);
+  outline-offset: 2px;
+}
+
+.fg-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--fg-bg);
+  border-radius: var(--radius-md, 14px);
+}
+
+.fg-svg .fg-label {
+  font-size: 12px;
+  fill: var(--fg-soft);
+  font-family: inherit;
+}
+
+.fg-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fg-play {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  flex: none;
+}
+
+.fg-range {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--fg-seg-on-bg);
+}
+
+.fg-phase {
+  min-width: 104px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--fg-soft);
+}
+
+.fg-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.fg-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.fg-indicator input {
+  accent-color: var(--fg-seg-on-bg);
+}
+
+.fg-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.fg-metric {
+  background: var(--fg-bg);
+  border-radius: var(--radius-sm, 10px);
+  padding: 10px 12px;
+}
+
+.fg-metric-label {
+  margin: 0 0 2px;
+  font-size: 12px;
+  color: var(--fg-soft);
+}
+
+.fg-metric-value {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--fg-ink);
+}
+
+.fg-metric-value--good { color: var(--fg-good); }
+.fg-metric-value--bad { color: var(--fg-bad); }
+
+.fg-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.fg-chip {
+  padding: 3px 10px;
+  border-radius: var(--radius-sm, 10px);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.fg-chip--info { background: var(--fg-info-bg); color: var(--fg-info); }
+.fg-chip--good { background: var(--fg-good-bg); color: var(--fg-good); }
+.fg-chip--bad { background: var(--fg-bad-bg); color: var(--fg-bad); }
+
+.fg-msg {
+  flex: 1;
+  min-width: 240px;
+  color: var(--fg-soft);
+}
