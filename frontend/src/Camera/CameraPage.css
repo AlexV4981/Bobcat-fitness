@@ -1,0 +1,225 @@
+/* Camera page. Uses the shared tokens and .card / .page-header classes from
+   HomePage.css. The video stage stays dark on purpose: it's a camera view. */
+
+.cam-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* ---------- Video ---------- */
+
+.cam-video {
+  background: var(--hero-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.cam-video-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9aa294;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cam-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+.cam-video-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 24px;
+  background: #030712;
+}
+
+/* ---------- Tracker panel ---------- */
+
+.cam-tracker {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cam-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.cam-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cam-select {
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.cam-counter {
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  text-align: center;
+}
+
+.cam-counter-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.cam-counter-number {
+  margin: 4px 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.cam-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.cam-btn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.cam-btn--primary {
+  flex: 2;
+  background: var(--hero-bg);
+  color: var(--accent);
+}
+
+.cam-btn--ghost {
+  flex: 1;
+  background: var(--surface);
+  color: var(--ink-soft);
+  border-color: var(--border);
+  font-weight: 600;
+}
+
+.cam-btn--save {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: var(--hero-bg);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cam-btn:focus-visible,
+.cam-select:focus-visible {
+  outline: 2px solid var(--hero-bg);
+  outline-offset: 2px;
+}
+
+/* ---------- History ---------- */
+
+.cam-history {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.cam-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cam-history-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.cam-history-empty {
+  margin: 0;
+  padding: 12px 0;
+  text-align: center;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.cam-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cam-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.cam-history-name {
+  margin-right: 8px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cam-history-time {
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.cam-history-badge {
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--accent);
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+@media (max-width: 960px) {
+  .cam-grid { grid-template-columns: minmax(0, 1fr); }
+}

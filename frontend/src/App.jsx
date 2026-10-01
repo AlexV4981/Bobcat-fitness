@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import HomePage from './HomePage';
-import Sidebar from './components/Sidebar';
+import Sidebar from './components/Homepage/Sidebar';
 import LoginPage from './LoginPage';
 import ProfilePage from './ProfilePage';
 import WorkoutSchedulePage from "./WorkoutSchedule/WorkoutSchedulePage";
 import Dashboard from './Dashboard/DashboardPage'
+import CameraPage from './Camera/CameraPage';
 import './App.css';
 
 export default function App() {
@@ -133,7 +134,16 @@ export default function App() {
       />
     );
   }
-
+  if (page === 'camera') {
+    return (
+      <div className="home">
+        <Sidebar activePage="camera" onNavigate={setPage} onLogout={handleLogout} />
+        <main className="content">
+          <CameraPage history={workoutHistory} onSaveSet={handleSaveSet} />
+        </main>
+      </div>
+    );
+  }
   if (page === 'workouts') {
     return (
       <div className="home">
