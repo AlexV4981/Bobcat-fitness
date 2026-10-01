@@ -7,13 +7,19 @@
  * inherits text color from its parent button).
  *
  * @param {Object} props
- * @param {"home"|"workouts"|"nutrition"|"profile"} props.name - Which icon
+ * @param {"home"|"camera"|"workouts"|"nutrition"|"profile"} props.name - Which icon
  *   to render. Must be a key of ICON_PATHS below.
  */
 
 const ICON_PATHS = {
   home: (
     <path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5a.5.5 0 0 1-.5-.5V15a2 2 0 0 0-4 0v4.5a.5.5 0 0 1-.5.5H5a1 1 0 0 1-1-1v-7.5Z" />
+  ),
+  camera: (
+    <>
+      <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1.2-1.8a1 1 0 0 1 .8-.4h4a1 1 0 0 1 .8.4L16 7h2.5A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-9Z" />
+      <circle cx="12" cy="13" r="3.2" />
+    </>
   ),
   workouts: (
     <path d="M6.5 8v8M4 10v4M17.5 8v8M20 10v4M8.5 12h7" />
@@ -28,12 +34,12 @@ const ICON_PATHS = {
     <path d="M12 3c-2.5 2-2.5 5-1 6.5S14 12 14 15a4 4 0 0 1-8 0c0-2 1-3 1-3M18 3s1 2-1 4" />
   ),
   dashboard: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <>
       <rect x="3" y="3" width="7" height="7" rx="1.5" />
       <rect x="14" y="3" width="7" height="7" rx="1.5" />
       <rect x="3" y="14" width="7" height="7" rx="1.5" />
       <rect x="14" y="14" width="7" height="7" rx="1.5" />
-    </svg>
+    </>
   ),
   profile: (
     <>
