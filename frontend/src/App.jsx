@@ -11,19 +11,14 @@ import CameraPage from './Camera/CameraPage';
 import AboutUsPage from './AboutUsPage';
 import './App.css';
 import { isSyntheticEmail } from './services/authService';
+import { updateProfile, uploadAvatar, parseHeight, formatHeight, parseWeight } from './services/profileService';
 
-const DEFAULT_LOCAL = {
-  profileImage: null,
-  weight: '165',
-  height: "5'10",
-  goal: 'Build Endurance',
-};
+const DEFAULTS = { weight: '165', height: "5'10", goal: 'Build Endurance' };
 
 export default function App() {
   const { user: authUser, profile, isGuest, isLoggedIn, loading,
-        signIn, signUp, signOut, linkEmail, continueAsGuest } = useAuth();
+        signIn, signUp, signOut, linkEmail, continueAsGuest, refreshProfile } = useAuth();
 
-  const [localProfile, setLocalProfile] = useState(DEFAULT_LOCAL);
   const [authError, setAuthError] = useState('');
   const [page, setPage] = useState('profile');
   const [workoutHistory, setWorkoutHistory] = useState([]);
@@ -36,9 +31,12 @@ export default function App() {
     username: isGuest ? 'Guest' : (profile?.username ?? ''),
     isLoggedIn,
     isGuest,
-    email: isSyntheticEmail(authEmail) ? '' : authEmail, // '' = not linked yet
+    email: isSyntheticEmail(authEmail) ? '' : authEmail,
     pendingEmail: authUser?.new_email ?? '',
-    ...localProfile,
+    profileImage: profile?.avatar_url ?? null,
+    weight: profile?.weight_lbs != null ? String(profile.weight_lbs) : DEFAULTS.weight,
+    height: profile?.height_in != null ? formatHeight(profile.height_in) : DEFAULTS.height,
+    goal: profile?.goal ?? DEFAULTS.goal,
   }
 
   const handleLoginSubmit = async (username, password, isRegistering) => {
@@ -55,12 +53,24 @@ export default function App() {
 
   const handleLogout = async () => {
     await signOut();
-    setLocalProfile(DEFAULT_LOCAL);
     setPage('home');
   };
 
-  const updateUserData = (field, value) =>
-    setLocalProfile((p) => ({ ...p, [field]: value }));
+  const handleSaveProfile = async ({ username, weight, height, goal }) => {
+    await updateProfile(authUser.id, {
+      username,
+      weight_lbs: parseWeight(weight),
+      height_in: parseHeight(height),
+      goal,
+    });
+    await refreshProfile();
+  };
+
+  const handleUploadAvatar = async (file) => {
+    const url = await uploadAvatar(authUser.id, file);
+    await updateProfile(authUser.id, { avatar_url: url });
+    await refreshProfile();
+  };
 
   if (loading) return null; // or a splash screen
   if (!user.isLoggedIn) {
@@ -130,7 +140,8 @@ export default function App() {
             weight={user.weight}
             height={user.height}
             goal={user.goal}
-            onProfileUpdate={updateUserData}
+            onSaveProfile={handleSaveProfile}
+            onUploadAvatar={handleUploadAvatar}
             onLogout={handleLogout}
           />
         </main>
