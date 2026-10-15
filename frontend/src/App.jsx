@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from './context/AuthContext';
 import HomePage from './HomePage';
 import Sidebar from './components/Homepage/Sidebar';
 import LoginPage from './LoginPage';
@@ -9,135 +10,75 @@ import Dashboard from './Dashboard/DashboardPage'
 import CameraPage from './Camera/CameraPage';
 import AboutUsPage from './AboutUsPage';
 import './App.css';
+import { isSyntheticEmail } from './services/authService';
+
+const DEFAULT_LOCAL = {
+  profileImage: null,
+  weight: '165',
+  height: "5'10",
+  goal: 'Build Endurance',
+};
 
 export default function App() {
-  /*
-   * STATE MANAGEMENT: This section initializes the application, including a database array for 
-   * the registered objects. It also sets up the active session containing the necessary credentials, 
-   * wellness data, a routing tracker, and an error string to display any issues that pop up.
-   */
-  const [registeredUsers, setRegisteredUsers] = useState([]);
-  const [user, setUser] = useState({
-    username: '',
-    password: '',
-    isLoggedIn: false,
-    isGuest: false,
-    profileImage: null,
-    weight: '165',
-    height: "5'10",
-    goal: 'Build Endurance'
-  });
-  
-  /*
-   * AUTHENTICATION HANDLERS: So this block manages identity access by processing user logins and registrations.
-   * It runs duplication checks during sign-ups, validates a match on any saved credentials, 
-   * checks existing records during logins, or builds a basic placeholder profile if a guest logs in.
-   */
-  const [page, setPage] = useState('profile');
+  const { user: authUser, profile, isGuest, isLoggedIn, loading,
+        signIn, signUp, signOut, linkEmail, continueAsGuest } = useAuth();
+
+  const [localProfile, setLocalProfile] = useState(DEFAULT_LOCAL);
   const [authError, setAuthError] = useState('');
+  const [page, setPage] = useState('profile');
   const [workoutHistory, setWorkoutHistory] = useState([]);
   const handleSaveSet = (record) => setWorkoutHistory((prev) => [record, ...prev]);
-  const handleLoginSubmit = (username, password, isRegistering) => {
+
+  // same `user` shape your pages already consume
+  const domain = import.meta.env.VITE_AUTH_EMAIL_DOMAIN
+  const authEmail = authUser?.email ?? ''
+  const user = {
+    username: isGuest ? 'Guest' : (profile?.username ?? ''),
+    isLoggedIn,
+    isGuest,
+    email: isSyntheticEmail(authEmail) ? '' : authEmail, // '' = not linked yet
+    pendingEmail: authUser?.new_email ?? '',
+    ...localProfile,
+  }
+
+  const handleLoginSubmit = async (username, password, isRegistering) => {
     setAuthError('');
-    if (isRegistering) {
-      const userExists = registeredUsers.some(
-        (u) => u.username.toLowerCase() === username.toLowerCase()
-      );
-      if (userExists) {
-        setAuthError('This username is already taken!');
-        return;
-      }
-      const newUser = { 
-        username, 
-        password,
-        profileImage: null,
-        weight: '165',
-        height: "5'10",
-        goal: 'Build Endurance'
-      };
-      setRegisteredUsers((prev) => [...prev, newUser]);
-      setUser({
-        ...newUser,
-        isLoggedIn: true,
-        isGuest: false
-      });
-    } else {
-      const foundUser = registeredUsers.find(
-        (u) => u.username.toLowerCase() === username.toLowerCase()
-      );
-      if (!foundUser) {
-        setAuthError('Username does not exist. Please create an account first!');
-        return;
-      }
-      if (foundUser.password !== password) {
-        setAuthError('Incorrect password. Please try again.');
-        return;
-      }
-      setUser({
-        ...foundUser,
-        isLoggedIn: true,
-        isGuest: false
-      });
+    try {
+      if (isRegistering) await signUp(username, password);
+      else await signIn(username, password);
+    } catch (err) {
+      setAuthError(err.message);
     }
   };
-  const handleGuest = () => {
-    setAuthError('');
-    setUser({
-      username: 'Guest',
-      password: '',
-      isLoggedIn: true,
-      isGuest: true,
-      profileImage: null,
-      weight: '165',
-      height: "5'10",
-      goal: 'Build Endurance'
-    });
-  };
-  
-  /*
-   * DATA SYNC & LIFE CYCLE: This section updates active profiles and handles any session states.
-   * It targets a mockup database format if a user were to enter the page as a guest, but it maps
-   * those updates directly back into the register if a persistent account is active.
-   */
-  const updateUserData = (field, value) => {
-    if (user.isGuest) {
-      setUser(prev => ({ ...prev, [field]: value }));
-      return;
-    }
-    setRegisteredUsers(prev => prev.map(u => 
-      u.username === user.username ? { ...u, [field]: value } : u
-    ));
-    setUser(prev => ({ ...prev, [field]: value }));
-  };
-  const handleLogout = () => {
+
+  const handleGuest = () => { setAuthError(''); continueAsGuest(); };
+
+  const handleLogout = async () => {
+    await signOut();
+    setLocalProfile(DEFAULT_LOCAL);
     setPage('home');
-    setUser({
-      username: '',
-      password: '',
-      isLoggedIn: false,
-      isGuest: false,
-      profileImage: null,
-      weight: '165',
-      height: "5'10",
-      goal: 'Build Endurance'
-    });
   };
+
+  const updateUserData = (field, value) =>
+    setLocalProfile((p) => ({ ...p, [field]: value }));
+
+  if (loading) return null; // or a splash screen
+  if (!user.isLoggedIn) {
+    return (
+      <LoginPage
+        onLoginSubmit={handleLoginSubmit}
+        onGuestAccess={handleGuest}
+        errorMessage={authError}
+        clearError={() => setAuthError('')}
+      />
+    );
+  }
   
    /*
    * ROUTING & TEMPLATE RENDERING: So this serves as the main interface routing layer. It restricts access if the user
    * is unauthenticated, handles a structured layout framework with sidebar navigation when jumping to the home or profile page, 
    * and essentially falls back to the main dashboard as the default view.
    */
-  if (!user.isLoggedIn) {
-    return (
-      <LoginPage 
-        onLoginSubmit={handleLoginSubmit} 
-        onGuestAccess={handleGuest} 
-        errorMessage={authError}
-        clearError={() => setAuthError('')}
-      />
-    );
-  }
   if (page === 'camera') {
     return (
       <div className="home">
@@ -181,6 +122,9 @@ export default function App() {
         <main className="content">
           <ProfilePage
             user={user.username}
+            email={user.email}
+            pendingEmail={user.pendingEmail}
+            onLinkEmail={linkEmail}
             isGuest={user.isGuest}
             profileImage={user.profileImage}
             weight={user.weight}
