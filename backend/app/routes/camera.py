@@ -5,15 +5,23 @@ from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from app.services.camera_stream import MAX_FRAME_BYTES, camera_streams
+from app.services.movement_recorder import movement_recorders
 from app.Webcam_utilities.SkeletonOverlay import process_jpeg_frame
+from app.Webcam_utilities.WebcamCalibrator import reset_landmark_origins
 
 router = APIRouter(prefix="/api/camera", tags=["camera"])
 
 #Validates any camera ID and ensures its following the allowed format
 CAMERA_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 MJPEG_BOUNDARY = "frame"
+
+
+class ExerciseRecordingRequest(BaseModel):
+    #Ensure the name is usable for folders and files
+    exercise: str
 
 
 #Ensures that the camera id has a valid format
@@ -29,13 +37,25 @@ def validate_camera_id(camera_id: str) -> str:
 #creates the websock upload endpoint
 @router.websocket("/ws/{camera_id}")
 #Selects the camera using the ID
-async def camera_websocket(websocket: WebSocket, camera_id: str) -> None:
+async def camera_websocket(
+    websocket: WebSocket,
+    camera_id: str,
+    exercise: str = "Exercise",
+) -> None:
     if not CAMERA_ID_PATTERN.fullmatch(camera_id):
         await websocket.close(code=1008, reason="Invalid camera ID")
         return
 
 #accepts the websocket but doest not connect to the camera, producer records that its connected
     await websocket.accept()
+    #Each new camera session gets a new pose origin lock basically when full body in view thats the origin
+    reset_landmark_origins()
+    try:
+        #recording starts with the given excersise that is set on the camera page later updates should make it auto switch to the new workouts after pose estimation
+        movement_recorders.start(camera_id, exercise)
+    except ValueError as error:
+        await websocket.close(code=1008, reason=str(error))
+        return
     await camera_streams.producer_connected(camera_id)
 
 #continously receives the stream from the websocket
@@ -80,6 +100,66 @@ async def camera_status(camera_id: str) -> dict[str, int | float | bool | None |
         "updated_at": state.updated_at,
     }
 
+
+@router.post("/{camera_id}/recording/start")
+async def start_exercise_recording(
+    camera_id: str,
+    request: ExerciseRecordingRequest,
+) -> dict[str, str]:
+    #clears the current rep if excersise changes this will only stay while we get the vector tracking working really well
+    validate_camera_id(camera_id)
+    try:
+        movement_recorders.start(camera_id, request.exercise)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return {"camera_id": camera_id, "exercise": request.exercise, "status": "recording"}
+
+
+@router.post("/{camera_id}/recording/rep")
+async def save_exercise_rep(camera_id: str) -> dict[str, int | str]:
+    #auto save the landmarks
+    validate_camera_id(camera_id)
+    try:
+        #recorder rejects empty reps when no pose crosses the movement threshold(10%) returns a 409 error
+        saved = await asyncio.to_thread(movement_recorders.save_rep, camera_id)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {
+        "exercise": saved.exercise,
+        "set_number": saved.set_number,
+        "rep_number": saved.rep_number,
+        "timestamp_id": saved.timestamp_id,
+        "frame_count": saved.frame_count,
+        "filename": saved.path.name,
+    }
+
+
+@router.post("/{camera_id}/recording/set")
+async def finish_exercise_set(camera_id: str) -> dict[str, int | str]:
+    #finish the current set so next reps use a new set folder
+    validate_camera_id(camera_id)
+    try:
+        #create the output folder only after at least one rep has been made
+        next_set_number = await asyncio.to_thread(
+            movement_recorders.finish_set,
+            camera_id,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"status": "recording", "set_number": next_set_number}
+
+
+@router.delete("/{camera_id}/recording/rep")
+async def undo_exercise_rep(camera_id: str) -> dict[str, str]:
+    #deletes the last rep in the current camera session
+    validate_camera_id(camera_id)
+    try:
+        #if undo button is used the folder will represent that by deleting the json file corresponding to it
+        filename = await asyncio.to_thread(movement_recorders.undo_last_rep, camera_id)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"status": "deleted", "filename": filename}
+
 #contionsouly streams processed JPEG images using MJPEG
 @router.get("/{camera_id}/mjpeg")
 
@@ -98,7 +178,8 @@ async def camera_mjpeg(camera_id: str) -> StreamingResponse:
             #changes the state of sequence
             sequence = state.sequence
             #sends the frame to process_jpeg_frame() in a worker thread then creates the MJPEG headers and response bytes
-            frame = await asyncio.to_thread(process_jpeg_frame, state.frame)
+            #pose sampling occurs while making the processed preview then it selects the cam ID selects the same recorder used by the rep and set endpoints
+            frame = await asyncio.to_thread(process_jpeg_frame, state.frame, camera_id)
             yield (
                 f"--{MJPEG_BOUNDARY}\r\n"
                 "Content-Type: image/jpeg\r\n"

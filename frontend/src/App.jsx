@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import HomePage from './HomePage';
-import Sidebar from './components/Homepage/Sidebar';
+import Sidebar from './components/HomePage/Sidebar';
 import LoginPage from './LoginPage';
 import ProfilePage from './ProfilePage';
 import WorkoutSchedulePage from "./WorkoutSchedule/WorkoutSchedulePage";

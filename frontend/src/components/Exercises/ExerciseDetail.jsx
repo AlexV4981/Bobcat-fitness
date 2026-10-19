@@ -11,7 +11,7 @@
  * @param {() => void} props.onBack - Return to the list.
  */
 
-import { getMistakes, getSteps } from "./exerciseCatalog.js";
+import { getMistakes, getSteps } from "./ExerciseCatalog.js";
 
 export default function ExerciseDetail({ exercise, onBack }) {
   const { Guide, name, category, difficulty, equipment, muscles, summary } = exercise;
