@@ -1,5 +1,11 @@
 import { useState } from "react";
 import WebcamConnection from "../components/WebCam/WebcamConnection";
+import {
+  CAMERA_ID,
+  finishExerciseSet,
+  saveExerciseRep,
+  undoExerciseRep,
+} from "../components/WebCam/WebcamUtils";
 import "./CameraPage.css";
 
 /**
@@ -7,14 +13,14 @@ import "./CameraPage.css";
  * ---------------------------------------------------------------------------
  * Live workout space: the webcam feed on the left, and on the right a manual
  * rep counter, exercise picker and the history of sets saved this session.
- * (Moved here from the WebcamProcessing branch's App.jsx, logic unchanged.)
  *
  * The exercise picker and the current rep count are local to this page. The
  * saved-set history is owned by App so it survives switching sidebar pages
  * (this page unmounts when you leave it, which also releases the camera).
  *
- * Data source: manual counting for now. TODO(api): POST each saved set to the
- * backend, and replace the Count Rep button with the webcam rep detector.
+ * Counting is manual: Count Rep saves the backend's accepted movement poses,
+ * and Save Completed Set advances its output folder. The history remains local
+ * UI state; rep detection is not automatic.
  *
  * @param {Object} props
  * @param {Array<{id: number, exercise: string, reps: number, timestamp: string}>} [props.history]
@@ -23,23 +29,54 @@ import "./CameraPage.css";
  *   when the user saves a completed set.
  */
 
+// Values become backend folder/file names, e.g. Push-Up_Set1/Push-Up_Rep1.json.
 const EXERCISE_OPTIONS = [
-  { value: "Push-up", label: "Push-ups 🧱" },
-  { value: "Pull-up", label: "Pull-ups 🦾" },
+  { value: "Push-Up", label: "Push-ups 🧱" },
+  { value: "Pull-Up", label: "Pull-ups 🦾" },
   { value: "Squat", label: "Squats 🦵" },
-  { value: "Sit-up", label: "Sit-ups 🧘" },
+  { value: "Sit-Up", label: "Sit-ups 🧘" },
 ];
 
 export default function CameraPage({ history = [], onSaveSet }) {
-  const [currentExercise, setCurrentExercise] = useState("Push-up");
+  const [currentExercise, setCurrentExercise] = useState("Push-Up");
   const [repCount, setRepCount] = useState(0);
+  const [debugExpanded, setDebugExpanded] = useState(false);
+  const [recordingError, setRecordingError] = useState("");
   
-  const incrementReps = () => setRepCount((prev) => prev + 1);
-  const decrementReps = () => setRepCount((prev) => (prev > 0 ? prev - 1 : 0));
+  const incrementReps = async () => {
+    setRecordingError("");
+    try {
+      // Increase the visible count only after a JSON file was saved successfully.
+      // If no pose met the movement threshold, show the backend error instead.
+      await saveExerciseRep(CAMERA_ID);
+      setRepCount((prev) => prev + 1);
+    } catch (error) {
+      setRecordingError(error.message);
+    }
+  };
+  const decrementReps = async () => {
+    if (repCount === 0) return;
+    setRecordingError("");
+    try {
+      // Remove the corresponding JSON before reducing the visible rep count.
+      await undoExerciseRep(CAMERA_ID);
+      setRepCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      setRecordingError(error.message);
+    }
+  };
 
-  const handleFinishWorkout = () => {
+  const handleFinishWorkout = async () => {
     if (repCount === 0) {
       alert("Do at least 1 rep before finishing!");
+      return;
+    }
+    setRecordingError("");
+    try {
+      // Advance the backend set first; retain UI counts if that request fails.
+      await finishExerciseSet(CAMERA_ID);
+    } catch (error) {
+      setRecordingError(error.message);
       return;
     }
     onSaveSet?.({
@@ -60,14 +97,18 @@ export default function CameraPage({ history = [], onSaveSet }) {
         </div>
       </header>
 
-      <div className="cam-grid">
+      <div className={`cam-grid${debugExpanded ? " cam-grid--debug" : ""}`}>
         <section className="cam-video" aria-label="Camera stream">
           <div className="cam-video-bar">
             <span className="cam-live-dot" aria-hidden="true" />
             <span>Camera Stream Monitoring View</span>
           </div>
           <div className="cam-video-stage">
-            <WebcamConnection />
+            <WebcamConnection
+              exercise={currentExercise}
+              debugExpanded={debugExpanded}
+              onToggleDebug={() => setDebugExpanded((expanded) => !expanded)}
+            />
           </div>
         </section>
 
@@ -105,6 +146,8 @@ export default function CameraPage({ history = [], onSaveSet }) {
           <button type="button" className="cam-btn cam-btn--save" onClick={handleFinishWorkout}>
             Save Completed Set
           </button>
+
+          {recordingError && <p className="camera-error" role="alert">{recordingError}</p>}
 
           <div className="cam-history">
             <div className="cam-history-head">

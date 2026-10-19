@@ -7,6 +7,10 @@ import mediapipe as mp
 import numpy as np
 from cv2.typing import MatLike
 
+from app.Webcam_utilities.WebcamCalibrator import draw_landmark_vectors
+from app.services.LandMarkVectors import TRACKED_LANDMARK_INDEXES
+from app.services.movement_recorder import movement_recorders
+
 
 #main body parts skipping small hand and face points
 BODY_CONNECTIONS = [
@@ -25,6 +29,17 @@ BODY_CONNECTIONS = [
     (26, 28),
     (28, 32),  #right leg and foot
 ]
+
+#shared joints are recorded once
+BODY_LANDMARK_INDEXES = tuple(
+    sorted({index for connection in BODY_CONNECTIONS for index in connection})
+)
+
+#fails if drawing and JSON landmark names dont match
+if BODY_LANDMARK_INDEXES != TRACKED_LANDMARK_INDEXES:
+    raise RuntimeError(
+        "TRACKED_LANDMARK_NAMES must exactly match the indexes in BODY_CONNECTIONS."
+    )
 
 #minimum camera quality and color of the skeleton overlay
 MIN_VISIBILITY = 0.45
@@ -75,13 +90,15 @@ def draw_head(frame: MatLike, landmarks) -> None:
     cv2.circle(frame, center, radius, SKELETON_COLOR, 4, cv2.LINE_AA)
 
 #find the person and draw their main limbs
-def draw_skeleton(frame: MatLike) -> MatLike:
+def draw_skeleton(frame: MatLike, camera_id: str = "default") -> MatLike:
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     with pose_lock:
         result = pose.process(rgb_frame)
 
     if not result.pose_landmarks:
+        #empty pose cannot pass the filter, so this creates no saved sample.
+        movement_recorders.record_frame(camera_id, {})
         return frame
 
     landmarks = result.pose_landmarks.landmark
@@ -96,18 +113,46 @@ def draw_skeleton(frame: MatLike) -> MatLike:
         cv2.line(frame, start, end, (10, 25, 30), 10, cv2.LINE_AA)
         cv2.line(frame, start, end, SKELETON_COLOR, 5, cv2.LINE_AA)
 
-    joint_indexes = sorted({index for pair in BODY_CONNECTIONS for index in pair})
+    joint_indexes = BODY_LANDMARK_INDEXES
+    screen_points = {}
+    positions = {}
     for index in joint_indexes:
         point = landmark_point(landmarks, index, width, height)
         if point is not None:
+            landmark = landmarks[index]
+            screen_points[index] = point
+            positions[index] = (landmark.x, landmark.y, landmark.z)
             cv2.circle(frame, point, 7, (10, 25, 30), -1, cv2.LINE_AA)
             cv2.circle(frame, point, 4, SKELETON_COLOR, -1, cv2.LINE_AA)
 
+    # Send raw coordinates only for visible BODY_CONNECTIONS landmarks. Filtering
+    # happens in memory here; Count Rep later writes accepted poses to disk.
+    # In an accepted pose, missing tracked landmarks receive -1 vectors.
+    movement_recorders.record_frame(camera_id, positions)
+
     draw_head(frame, landmarks)
+
+    calibrated = draw_landmark_vectors(
+        frame,
+        screen_points,
+        positions,
+        joint_indexes,
+    )
+    if not calibrated:
+        cv2.putText(
+            frame,
+            "Show full body to calibrate vectors",
+            (12, 28),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.65,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
     return frame
 
 #decodes a JPEG and adds the skeleton then codes it back into a JPEG
-def process_jpeg_frame(jpeg: bytes) -> bytes:
+def process_jpeg_frame(jpeg: bytes, camera_id: str = "default") -> bytes:
     frame_data = np.frombuffer(jpeg, dtype=np.uint8)
     frame = cv2.imdecode(frame_data, cv2.IMREAD_COLOR)
     #ensures the jpeg is clear enough to begin drawing
@@ -115,7 +160,7 @@ def process_jpeg_frame(jpeg: bytes) -> bytes:
         return jpeg
 
     #draws after getting enough information
-    processed_frame = draw_skeleton(frame)
+    processed_frame = draw_skeleton(frame, camera_id)
     encoded, output = cv2.imencode(
         ".jpg",
         processed_frame,
