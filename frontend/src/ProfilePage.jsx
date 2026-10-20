@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 
 // =================================================================================
 // 1. DATA RECEIVING & IMAGE HANDLING:
@@ -10,6 +10,9 @@ import React, { useRef } from 'react';
 // =================================================================================
 export default function ProfilePage({ 
   user, 
+  email,
+  pendingEmail,
+  onLinkEmail,
   isGuest, 
   profileImage, 
   weight, 
@@ -29,6 +32,24 @@ export default function ProfilePage({
   const getInitials = () => {
     if (!user || user.trim() === '') return 'BF';
     return user.substring(0, 2).toUpperCase();
+  };
+
+  const [newEmail, setNewEmail] = useState('');
+  const [emailMsg, setEmailMsg] = useState('');
+  const [emailBusy, setEmailBusy] = useState(false);
+
+  const handleLinkEmail = async () => {
+    setEmailMsg('');
+    setEmailBusy(true);
+    try {
+      await onLinkEmail(newEmail.trim());
+      setEmailMsg('Check your inbox for a confirmation link.');
+      setNewEmail('');
+    } catch (err) {
+      setEmailMsg(err.message);
+    } finally {
+      setEmailBusy(false);
+    }
   };
 
   return (
@@ -124,14 +145,16 @@ export default function ProfilePage({
           </div>
         </div>
 
-   {/*} // =================================================================================
-        // 3. FITNESS METRICS & SECURITY ENFORCEMENT:
+      {/*
+        =================================================================================
+        3. FITNESS METRICS & SECURITY ENFORCEMENT:
         // This final part of the code acts as the interactive user dashboard of sorts. 
         // Here it has the implementation of adding your height, weight, or a goal which
         // you can change in the toggle box. It also saves the data if you want to log in. 
         // It also features a guest view of the profile. If someone wants to logs in via Guest access, 
         // the inputs change to an unclickable state to prevent modifications to the profile page.
-        // ================================================================================= */}
+        // ================================================================================= 
+      */}
         <div style={cardStyle}>
           <h3 style={cardTitleStyle}>Fitness Metrics</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -169,6 +192,36 @@ export default function ProfilePage({
               </select>
             </div>
           </div>
+        </div>
+
+      {/*
+        =================================================================================
+        4. EMAIL LINKING & CONFIRMATION:
+        This section is for linking a real email to the account. ...
+        =================================================================================
+      */}
+        <div style={cardStyle}>
+          <h3 style={cardTitleStyle}>Email</h3>
+          {email && <p style={{ color: '#444', marginTop: 0 }}>Linked: <strong>{email}</strong></p>}
+          {pendingEmail && <p style={{ color: '#E67E22', fontSize: '13px' }}>Waiting for confirmation: {pendingEmail}</p>}
+          <div style={rowStyle}>
+            <input
+              type="email"
+              value={newEmail}
+              disabled={isGuest}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder={email ? 'Change email' : 'Link an email'}
+              style={{ ...getInlineInputStyle(isGuest), width: '100%', textAlign: 'left' }}
+            />
+          </div>
+          <button
+            onClick={handleLinkEmail}
+            disabled={isGuest || emailBusy || !newEmail.trim()}
+            style={{ marginTop: '12px', backgroundColor: '#121212', color: '#FFF', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
+          >
+            {email ? 'Change email' : 'Link email'}
+          </button>
+          {emailMsg && <p style={{ fontSize: '13px', color: '#666' }}>{emailMsg}</p>}
         </div>
       </div>
     </div>
