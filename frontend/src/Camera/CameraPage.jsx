@@ -8,6 +8,8 @@ import {
 } from "../components/WebCam/WebcamUtils";
 import "./CameraPage.css";
 
+import { logCompletedSet } from "../lib/workoutLog";
+
 /**
  * CameraPage
  * ---------------------------------------------------------------------------
@@ -55,7 +57,7 @@ const sameExercise = (a, b) =>
 
 const cameraUrl = (path) => `/api/camera/${encodeURIComponent(CAMERA_ID)}/${path}`;
 
-export default function CameraPage({ history = [], onSaveSet }) {
+export default function CameraPage({ history = [], onSaveSet, session }) {
   const [currentExercise, setCurrentExercise] = useState("Push-Up");
   const [repCount, setRepCount] = useState(0);
   const [debugExpanded, setDebugExpanded] = useState(false);
@@ -135,6 +137,13 @@ export default function CameraPage({ history = [], onSaveSet }) {
     } catch (error) {
       setRecordingError(error.message);
       return;
+    }
+    // Also save the set to the user's account (linked to the plan attempt, if any).
+    // A failure here shows a message but doesn't lose the set locally.
+    try {
+      await logCompletedSet({ exercise: currentExercise, reps: repCount, session });
+    } catch (error) {
+      setRecordingError(`Set saved locally, but not to your account: ${error.message}`);
     }
     onSaveSet?.({
       id: Date.now(),
