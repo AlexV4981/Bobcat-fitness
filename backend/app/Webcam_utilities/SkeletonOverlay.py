@@ -10,6 +10,8 @@ from cv2.typing import MatLike
 from app.Webcam_utilities.WebcamCalibrator import draw_landmark_vectors
 from app.services.LandMarkVectors import TRACKED_LANDMARK_INDEXES
 from app.services.movement_recorder import movement_recorders
+from app.services.rep_session import rep_sessions
+from app.Webcam_utilities.rep_counter import Landmark
 
 
 #main body parts skipping small hand and face points
@@ -89,16 +91,37 @@ def draw_head(frame: MatLike, landmarks) -> None:
     cv2.circle(frame, center, radius, (10, 25, 30), 8, cv2.LINE_AA)
     cv2.circle(frame, center, radius, SKELETON_COLOR, 4, cv2.LINE_AA)
 
+#copies MediaPipe landmarks into plain tuples so the rep counter never touches MediaPipe objects
+def to_landmarks(landmark_list) -> list[Landmark] | None:
+    if landmark_list is None:
+        return None
+    return [Landmark(l.x, l.y, l.z, l.visibility) for l in landmark_list.landmark]
+
+#feeds the pose to the automatic rep counter (None = nobody detected)
+def count_reps(camera_id: str, image_landmarks, world_landmarks) -> None:
+    if not rep_sessions.process(camera_id, image_landmarks, world_landmarks):
+        return
+    #a detected rep is saved exactly like a Count Rep click so the JSON files match the count
+    try:
+        movement_recorders.save_rep(camera_id)
+    except ValueError as error:
+        #recorder rejected it (no pose crossed its movement threshold) so the rep is not counted
+        rep_sessions.adjust(camera_id, -1)
+        print(f"Auto-detected rep was not saved: {error}")
+
 #find the person and draw their main limbs
 def draw_skeleton(frame: MatLike, camera_id: str = "default") -> MatLike:
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     with pose_lock:
         result = pose.process(rgb_frame)
+        image_landmarks = to_landmarks(result.pose_landmarks)
+        world_landmarks = to_landmarks(result.pose_world_landmarks)
 
     if not result.pose_landmarks:
         #empty pose cannot pass the filter, so this creates no saved sample.
         movement_recorders.record_frame(camera_id, {})
+        count_reps(camera_id, None, None)
         return frame
 
     landmarks = result.pose_landmarks.landmark
@@ -129,6 +152,8 @@ def draw_skeleton(frame: MatLike, camera_id: str = "default") -> MatLike:
     # happens in memory here; Count Rep later writes accepted poses to disk.
     # In an accepted pose, missing tracked landmarks receive -1 vectors.
     movement_recorders.record_frame(camera_id, positions)
+    #counted after recording so the frame that finishes a rep is part of that rep's JSON
+    count_reps(camera_id, image_landmarks, world_landmarks)
 
     draw_head(frame, landmarks)
 

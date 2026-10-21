@@ -7,7 +7,7 @@ const JPEG_QUALITY = 0.8
 
 //builds the websocket URL thats used to upload the camera frames
 export function getCameraWebSocketUrl(cameraId, exercise = 'Exercise') {
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5173/'
   const url = new URL(apiBase)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
   url.pathname = `/api/camera/ws/${encodeURIComponent(cameraId)}`
@@ -17,11 +17,11 @@ export function getCameraWebSocketUrl(cameraId, exercise = 'Exercise') {
   return url.toString()
 }
 
-//recording controls share the camera ID used by frame upload and preview.
-function getCameraApiUrl(cameraId, path) {
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+//builds the URL for a camera's JSON endpoints, e.g. getCameraApiUrl('default', 'reps')
+export function getCameraApiUrl(cameraId, path) {
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5173/'
   const url = new URL(apiBase)
-  url.pathname = `/api/camera/${encodeURIComponent(cameraId)}/recording/${path}`
+  url.pathname = `/api/camera/${encodeURIComponent(cameraId)}/${path}`
   url.search = ''
   url.hash = ''
   return url.toString()
@@ -38,7 +38,7 @@ async function expectJson(response) {
 
 //start a fresh partial rep for the selected exercise; this writes no JSON.
 export async function startExerciseRecording(cameraId, exercise) {
-  const response = await fetch(getCameraApiUrl(cameraId, 'start'), {
+  const response = await fetch(getCameraApiUrl(cameraId, 'recording/start'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ exercise }),
@@ -48,25 +48,25 @@ export async function startExerciseRecording(cameraId, exercise) {
 
 //count Rep writes the already- iltered poses buffered by the backend.
 export async function saveExerciseRep(cameraId) {
-  const response = await fetch(getCameraApiUrl(cameraId, 'rep'), { method: 'POST' })
+  const response = await fetch(getCameraApiUrl(cameraId, 'recording/rep'), { method: 'POST' })
   return expectJson(response)
 }
 
 //future reps go into the next Date_Exercise_Set# folder after this succeeds.
 export async function finishExerciseSet(cameraId) {
-  const response = await fetch(getCameraApiUrl(cameraId, 'set'), { method: 'POST' })
+  const response = await fetch(getCameraApiUrl(cameraId, 'recording/set'), { method: 'POST' })
   return expectJson(response)
 }
 
 //delete the latest rep saved by this camera session in its current set.
 export async function undoExerciseRep(cameraId) {
-  const response = await fetch(getCameraApiUrl(cameraId, 'rep'), { method: 'DELETE' })
+  const response = await fetch(getCameraApiUrl(cameraId, 'recording/rep'), { method: 'DELETE' })
   return expectJson(response)
 }
 
 //builds the HTTP MJPEG camera stream
 export function getProcessedCameraUrl(cameraId) {
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5173/'
   const url = new URL(apiBase)
   url.pathname = `/api/camera/${encodeURIComponent(cameraId)}/mjpeg`
   url.search = ''

@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.services.camera_stream import MAX_FRAME_BYTES, camera_streams
 from app.services.movement_recorder import movement_recorders
+from app.services.rep_session import rep_sessions
 from app.Webcam_utilities.SkeletonOverlay import process_jpeg_frame
 from app.Webcam_utilities.WebcamCalibrator import reset_landmark_origins
 
@@ -56,6 +57,8 @@ async def camera_websocket(
     except ValueError as error:
         await websocket.close(code=1008, reason=str(error))
         return
+    #the automatic rep counter follows the same exercise (unsupported names are just not counted)
+    rep_sessions.set_exercise(camera_id, exercise)
     await camera_streams.producer_connected(camera_id)
 
 #continously receives the stream from the websocket
@@ -112,7 +115,25 @@ async def start_exercise_recording(
         movement_recorders.start(camera_id, request.exercise)
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    rep_sessions.set_exercise(camera_id, request.exercise)
     return {"camera_id": camera_id, "exercise": request.exercise, "status": "recording"}
+
+
+#current automatic rep count, movement phase, and whether a body is being tracked
+@router.get("/{camera_id}/reps")
+async def camera_reps(camera_id: str) -> dict:
+    validate_camera_id(camera_id)
+    return rep_sessions.state(camera_id)
+
+
+#selects the exercise for automatic counting only (also resets that count)
+@router.put("/{camera_id}/exercise")
+async def camera_set_exercise(camera_id: str, request: ExerciseRecordingRequest) -> dict:
+    validate_camera_id(camera_id)
+    state = rep_sessions.set_exercise(camera_id, request.exercise)
+    if not state["supported"]:
+        raise HTTPException(status_code=422, detail=f"{request.exercise!r} cannot be auto-counted.")
+    return state
 
 
 @router.post("/{camera_id}/recording/rep")
@@ -124,6 +145,8 @@ async def save_exercise_rep(camera_id: str) -> dict[str, int | str]:
         saved = await asyncio.to_thread(movement_recorders.save_rep, camera_id)
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+    #keeps the automatic counter in step with manually counted reps
+    rep_sessions.adjust(camera_id, 1)
     return {
         "exercise": saved.exercise,
         "set_number": saved.set_number,
@@ -146,6 +169,7 @@ async def finish_exercise_set(camera_id: str) -> dict[str, int | str]:
         )
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+    rep_sessions.reset(camera_id)
     return {"status": "recording", "set_number": next_set_number}
 
 
@@ -158,6 +182,7 @@ async def undo_exercise_rep(camera_id: str) -> dict[str, str]:
         filename = await asyncio.to_thread(movement_recorders.undo_last_rep, camera_id)
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+    rep_sessions.adjust(camera_id, -1)
     return {"status": "deleted", "filename": filename}
 
 #contionsouly streams processed JPEG images using MJPEG
