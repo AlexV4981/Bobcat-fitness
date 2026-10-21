@@ -17,6 +17,8 @@ client = genai.Client()
 # part2 = "-DKgy2I3kz_NH7f1"
 # part3 = "cdzjgjYlCyYlDXTzC9snlbQ"
 
+# --------------------------------------------------------------------------------------------------------------------------
+
 # This specific section acts as a data security validation contract across the API network bridge. 
 # It should be the working engine that comes from the text box and guarantees that 
 # the AI includes fitness goals and a workout plans in which it would generate before it
