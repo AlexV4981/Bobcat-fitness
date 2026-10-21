@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WebcamConnection from "../components/WebCam/WebcamConnection";
 import {
   CAMERA_ID,
@@ -7,6 +7,8 @@ import {
   undoExerciseRep,
 } from "../components/WebCam/WebcamUtils";
 import "./CameraPage.css";
+
+import { logCompletedSet } from "../lib/workoutLog";
 
 /**
  * CameraPage
@@ -18,9 +20,11 @@ import "./CameraPage.css";
  * saved-set history is owned by App so it survives switching sidebar pages
  * (this page unmounts when you leave it, which also releases the camera).
  *
- * Counting is manual: Count Rep saves the backend's accepted movement poses,
- * and Save Completed Set advances its output folder. The history remains local
- * UI state; rep detection is not automatic.
+ * Reps are counted automatically: the backend watches the pose stream and
+ * counts full-range reps (see Webcam_utilities/rep_counter.py), saving each one
+ * like a Count Rep click. This page polls it for the live count. Count Rep and
+ * Undo remain as manual corrections, and Save Completed Set advances the output
+ * folder. The history remains local UI state.
  *
  * @param {Object} props
  * @param {Array<{id: number, exercise: string, reps: number, timestamp: string}>} [props.history]
@@ -37,12 +41,67 @@ const EXERCISE_OPTIONS = [
   { value: "Sit-Up", label: "Sit-ups 🧘" },
 ];
 
-export default function CameraPage({ history = [], onSaveSet }) {
+const POLL_INTERVAL_MS = 300;
+
+//what to tell the user for each phase the backend reports while it is tracking a body
+const PHASE_LABELS = {
+  waiting: "Get into the starting position",
+  ready: "Ready",
+  moving: "In motion",
+  peak: "Full range, now return to start",
+};
+
+//"Push-Up" and "Push-up" are the same exercise
+const sameExercise = (a, b) =>
+  a.toLowerCase().replace(/[^a-z]/g, "") === b.toLowerCase().replace(/[^a-z]/g, "");
+
+const cameraUrl = (path) => `/api/camera/${encodeURIComponent(CAMERA_ID)}/${path}`;
+
+export default function CameraPage({ history = [], onSaveSet, session }) {
   const [currentExercise, setCurrentExercise] = useState("Push-Up");
   const [repCount, setRepCount] = useState(0);
   const [debugExpanded, setDebugExpanded] = useState(false);
   const [recordingError, setRecordingError] = useState("");
-  
+  const [phase, setPhase] = useState("waiting");
+  const [tracking, setTracking] = useState(false);
+
+  //lets the poller ignore a reply that belongs to the previously selected exercise
+  const exerciseRef = useRef(currentExercise);
+
+  //tells the backend counter which exercise to watch (this also zeroes its count)
+  useEffect(() => {
+    exerciseRef.current = currentExercise;
+    fetch(cameraUrl("exercise"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ exercise: currentExercise }),
+    }).catch((error) => console.error("Unable to select exercise", error));
+  }, [currentExercise]);
+
+  //polls the backend for the automatic count
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await fetch(cameraUrl("reps"));
+        if (!response.ok) throw new Error(`reps ${response.status}`);
+        const state = await response.json();
+        console.log("rep poll", state, exerciseRef.current);   // temporary
+        if (cancelled || !sameExercise(state.exercise, exerciseRef.current)) return;
+        setRepCount(state.reps);
+        setPhase(state.phase);
+        setTracking(state.tracking);
+        } catch (error) {
+          console.error("rep poll failed", error);              // was: catch {
+          if (!cancelled) setTracking(false);
+        }
+    }, POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
+
   const incrementReps = async () => {
     setRecordingError("");
     try {
@@ -78,6 +137,13 @@ export default function CameraPage({ history = [], onSaveSet }) {
     } catch (error) {
       setRecordingError(error.message);
       return;
+    }
+    // Also save the set to the user's account (linked to the plan attempt, if any).
+    // A failure here shows a message but doesn't lose the set locally.
+    try {
+      await logCompletedSet({ exercise: currentExercise, reps: repCount, session });
+    } catch (error) {
+      setRecordingError(`Set saved locally, but not to your account: ${error.message}`);
     }
     onSaveSet?.({
       id: Date.now(),
@@ -134,6 +200,10 @@ export default function CameraPage({ history = [], onSaveSet }) {
             <div className="cam-counter-label">Reps Completed</div>
             <div className="cam-counter-number">{repCount}</div>
           </div>
+
+          <p className="cam-label" aria-live="polite">
+            {tracking ? PHASE_LABELS[phase] ?? "Tracking" : "No body detected. Start the camera and step into view"}
+          </p>
 
           <div className="cam-actions">
             <button type="button" className="cam-btn cam-btn--primary" onClick={incrementReps}>
