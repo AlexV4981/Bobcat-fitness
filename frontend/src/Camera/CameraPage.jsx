@@ -57,7 +57,7 @@ const sameExercise = (a, b) =>
 
 const cameraUrl = (path) => `/api/camera/${encodeURIComponent(CAMERA_ID)}/${path}`;
 
-export default function CameraPage({ history = [], onSaveSet, session }) {
+export default function CameraPage({ history = [], onSaveSet, session, onNavigate}) {
   const [currentExercise, setCurrentExercise] = useState("Push-Up");
   const [repCount, setRepCount] = useState(0);
   const [debugExpanded, setDebugExpanded] = useState(false);
