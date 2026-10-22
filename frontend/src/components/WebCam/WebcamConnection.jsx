@@ -6,13 +6,14 @@ import {
   captureVideoFrame,
   getProcessedCameraUrl,
   getCameraWebSocketUrl,
+  startExerciseRecording,
 } from './WebcamUtils'
 
 //socket_open is the value for the browser to open the websocket.
 const SOCKET_OPEN = 1
 const MAX_BUFFERED_BYTES = 1_000_000
 
-function WebcamConnection() {
+function WebcamConnection({ exercise = 'Exercise', debugExpanded = false, onToggleDebug }) {
   //refs for video, canvas, media stream, socket, timer, and upload status
   const videoRef = useRef(null)
   const captureCanvasRef = useRef(null)
@@ -57,7 +58,8 @@ function WebcamConnection() {
 
   //when cmarea starts sets the socketRef to socket and begins to pushframes
   const startFrameUpload = useCallback(() => {
-    const socket = new WebSocket(getCameraWebSocketUrl(CAMERA_ID))
+    //pass the selected exercise so the backend names its set and rep outputs.
+    const socket = new WebSocket(getCameraWebSocketUrl(CAMERA_ID, exercise))
     socket.binaryType = 'arraybuffer'
     socketRef.current = socket
     setStreamState('connecting')
@@ -114,7 +116,7 @@ function WebcamConnection() {
       socketRef.current = null
       if (event.code !== 1000) setStreamState('error')
     })
-  }, [])
+  }, [exercise])
 
   //starts camera and sets the stream to a specific size the browser prefers
   const startWebcam = useCallback(async () => {
@@ -154,6 +156,16 @@ function WebcamConnection() {
 
   useEffect(() => stopWebcam, [stopWebcam])
 
+  useEffect(() => {
+    if (cameraState !== 'on') return
+    //chnging the excersise while camera stays on resets partial recordings backend
+    //backend preserves the set number for repeated starts of the same name excersises
+    startExerciseRecording(CAMERA_ID, exercise).catch((error) => {
+      console.error('Unable to start exercise vector recording', error)
+      setErrorMessage(error.message)
+    })
+  }, [cameraState, exercise])
+
   const isCameraOn = cameraState === 'on'
 
   return (
@@ -187,14 +199,24 @@ function WebcamConnection() {
 
       <canvas ref={captureCanvasRef} className="capture-canvas" aria-hidden="true" />
 
-      <button
-        type="button"
-        className="camera-button"
-        disabled={cameraState === 'starting'}
-        onClick={isCameraOn ? stopWebcam : startWebcam}
-      >
-        {cameraState === 'starting' ? 'Starting…' : isCameraOn ? 'Stop camera' : 'Start camera'}
-      </button>
+      <div className="camera-controls">
+        <button
+          type="button"
+          className="camera-button"
+          disabled={cameraState === 'starting'}
+          onClick={isCameraOn ? stopWebcam : startWebcam}
+        >
+          {cameraState === 'starting' ? 'Starting…' : isCameraOn ? 'Stop camera' : 'Start camera'}
+        </button>
+        <button
+          type="button"
+          className="camera-button camera-button--debug"
+          aria-pressed={debugExpanded}
+          onClick={onToggleDebug}
+        >
+          {debugExpanded ? 'Exit debug view' : 'Expand debug view'}
+        </button>
+      </div>
 
       {errorMessage && (
         <p className="camera-error" role="alert">

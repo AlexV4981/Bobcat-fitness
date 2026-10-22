@@ -8,6 +8,25 @@
   align-items: start;
 }
 
+.cam-grid--debug {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cam-grid--debug .cam-tracker {
+  display: none;
+}
+
+.cam-grid--debug .cam-video-stage {
+  min-height: 0;
+  padding: 12px;
+}
+
+.cam-grid--debug .camera-card {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+
 /* ---------- Video ---------- */
 
 .cam-video {
