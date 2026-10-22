@@ -21,6 +21,8 @@ import "./CameraPage.css";
  *   Sets saved so far this session, newest first.
  * @param {(record: Object) => void} props.onSaveSet - Called with a new record
  *   when the user saves a completed set.
+ * @param {(page: string) => void} props.onNavigate - Callback function to transition
+ *   the application routing view state layer.
  */
 
 const EXERCISE_OPTIONS = [
@@ -30,7 +32,8 @@ const EXERCISE_OPTIONS = [
   { value: "Sit-up", label: "Sit-ups 🧘" },
 ];
 
-export default function CameraPage({ history = [], onSaveSet }) {
+// NEW: Accept the onNavigate routing prop here alongside the rest
+export default function CameraPage({ history = [], onSaveSet, onNavigate }) {
   const [currentExercise, setCurrentExercise] = useState("Push-up");
   const [repCount, setRepCount] = useState(0);
   
@@ -105,6 +108,30 @@ export default function CameraPage({ history = [], onSaveSet }) {
           <button type="button" className="cam-btn cam-btn--save" onClick={handleFinishWorkout}>
             Save Completed Set
           </button>
+
+          <div className="cam-diet-shortcut" style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #eee' }}>
+            <button 
+              type="button" 
+              className="cam-btn" 
+              onClick={() => onNavigate?.('AI Dieting')}
+              style={{
+                width: '100%',
+                backgroundColor: '#27ae60',
+                color: 'white',
+                border: 'none',
+                padding: '0.6rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>🥗 Fuel Your Recovery (AI Diet)</span>
+            </button>
+          </div>
 
           <div className="cam-history">
             <div className="cam-history-head">

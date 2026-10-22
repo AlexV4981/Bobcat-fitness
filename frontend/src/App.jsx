@@ -8,6 +8,7 @@ import ExercisesPage from "./Exercises/ExercisesPage";
 import Dashboard from './Dashboard/DashboardPage'
 import CameraPage from './Camera/CameraPage';
 import AboutUsPage from './AboutUsPage';
+import AIDietingPage from './AIDieting/AIDietingPage'; 
 import './App.css';
 
 export default function App() {
@@ -143,7 +144,7 @@ export default function App() {
       <div className="home">
         <Sidebar activePage="camera" onNavigate={setPage} onLogout={handleLogout} />
         <main className="content">
-          <CameraPage history={workoutHistory} onSaveSet={handleSaveSet} />
+          <CameraPage history={workoutHistory} onSaveSet={handleSaveSet} onNavigate={setPage} />
         </main>
       </div>
     );
@@ -170,7 +171,17 @@ export default function App() {
     return (
       <div className="home">
         <Sidebar activePage="dashboard" onNavigate={setPage} onLogout={handleLogout} />
-        <Dashboard />
+        <Dashboard onNavigate={setPage} /> 
+      </div>
+    );
+  }
+  if (page === 'AI Dieting') {
+    return (
+      <div className="home">
+        <Sidebar activePage="AI Dieting" onNavigate={setPage} onLogout={handleLogout} />
+        <main className="content">
+          <AIDietingPage userGoal={user.goal} />
+        </main>
       </div>
     );
   }
