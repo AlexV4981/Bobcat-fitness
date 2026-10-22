@@ -6,7 +6,6 @@ import LoginPage from './LoginPage';
 import ProfilePage from './ProfilePage';
 import WorkoutSchedulePage from "./WorkoutSchedule/WorkoutSchedulePage";
 import ExercisesPage from "./Exercises/ExercisesPage";
-import Dashboard from './Dashboard/DashboardPage'
 import CameraPage from './Camera/CameraPage';
 import AboutUsPage from './AboutUsPage';
 import './App.css';
@@ -87,7 +86,7 @@ export default function App() {
    /*
    * ROUTING & TEMPLATE RENDERING: So this serves as the main interface routing layer. It restricts access if the user
    * is unauthenticated, handles a structured layout framework with sidebar navigation when jumping to the home or profile page, 
-   * and essentially falls back to the main dashboard as the default view.
+   * and essentially falls back to the main home page as the default view.
    */
   if (page === 'camera') {
     return (
@@ -114,14 +113,6 @@ export default function App() {
       <div className="home">
         <Sidebar activePage="exercises" onNavigate={setPage} onLogout={handleLogout} />
         <ExercisesPage />
-      </div>
-    );
-  }
-  if (page === 'dashboard') {
-    return (
-      <div className="home">
-        <Sidebar activePage="dashboard" onNavigate={setPage} onLogout={handleLogout} />
-        <Dashboard />
       </div>
     );
   }

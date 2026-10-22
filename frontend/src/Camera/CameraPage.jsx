@@ -31,6 +31,8 @@ import { logCompletedSet } from "../lib/workoutLog";
  *   Sets saved so far this session, newest first.
  * @param {(record: Object) => void} props.onSaveSet - Called with a new record
  *   when the user saves a completed set.
+ * @param {(page: string) => void} props.onNavigate - Callback function to transition
+ *   the application routing view state layer.
  */
 
 // Values become backend folder/file names, e.g. Push-Up_Set1/Push-Up_Rep1.json.
@@ -218,6 +220,30 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
           </button>
 
           {recordingError && <p className="camera-error" role="alert">{recordingError}</p>}
+
+          <div className="cam-diet-shortcut" style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #eee' }}>
+            <button 
+              type="button" 
+              className="cam-btn" 
+              onClick={() => onNavigate?.('AI Dieting')}
+              style={{
+                width: '100%',
+                backgroundColor: '#27ae60',
+                color: 'white',
+                border: 'none',
+                padding: '0.6rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>🥗 Fuel Your Recovery (AI Diet)</span>
+            </button>
+          </div>
 
           <div className="cam-history">
             <div className="cam-history-head">
