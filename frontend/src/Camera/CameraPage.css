@@ -8,6 +8,25 @@
   align-items: start;
 }
 
+.cam-grid--debug {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cam-grid--debug .cam-tracker {
+  display: none;
+}
+
+.cam-grid--debug .cam-video-stage {
+  min-height: 0;
+  padding: 12px;
+}
+
+.cam-grid--debug .camera-card {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+
 /* ---------- Video ---------- */
 
 .cam-video {
@@ -223,3 +242,62 @@
 @media (max-width: 960px) {
   .cam-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ---------- Camera panel: maroon + gold to match the site ---------- */
+
+.cam .camera-card {
+  margin: 0;                      /* the .cam-video wrapper already provides the frame */
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  color: #f4ece4;
+}
+
+.cam .camera-copy h1 { color: #f4ece4; }
+.cam .camera-copy p:last-child { color: #c9b8a8; }
+.cam .eyebrow { color: var(--accent); }
+
+.cam .camera-stage {
+  background: radial-gradient(circle at 50% 20%, #5a2424, transparent 46%), #1a0a0a;
+  border: 1px solid rgba(219, 177, 91, 0.25);
+}
+
+.cam .camera-overlay {
+  color: #f4ece4;
+  background: rgba(26, 10, 10, 0.78);
+  border: 1px solid rgba(219, 177, 91, 0.25);
+}
+
+.cam .status-dot { background: #8a7a6a; }
+.cam .status-dot.is-live {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(219, 177, 91, 0.2);
+}
+
+.cam .camera-button {
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+.cam .camera-button:hover:not(:disabled) { background: #e8c880; }
+
+.cam .camera-button--debug {
+  color: #f4ece4;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(219, 177, 91, 0.35);
+}
+.cam .camera-button--debug:hover:not(:disabled) {
+  background: rgba(219, 177, 91, 0.16);
+}
+
+.cam .camera-button:focus-visible { outline-color: var(--accent); }
+
+.cam .camera-error {
+  color: #ffe1da;
+  background: #2b0d0d;
+  border: 1px solid #b4483f;
+}
+
+/* the frame around it */
+.cam-video-bar { color: #c9b8a8; border-bottom-color: rgba(219, 177, 91, 0.18); }
+.cam-video-stage { background: var(--hero-bg-2); }

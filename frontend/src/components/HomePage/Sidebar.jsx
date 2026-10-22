@@ -15,14 +15,19 @@ import NavIcon from "./NavIcon";
  * Props: none.
  */
 
-//const NAV_ITEMS = ["home", "workouts", "nutrition", "profile"];
-
-// Only these have real pages so far; the rest are ignored for now
-const AVAILABLE_PAGES = ["home", "camera", "workouts", "exercises", "about-us", "profile"];
+const NAV_ITEMS = [
+  { key: "home",      label: "Home",      icon: "home" },
+  { key: "camera",    label: "Camera",    icon: "camera" },
+  { key: "workouts",  label: "Workouts",  icon: "workouts" },
+  { key: "exercises", label: "Exercises", icon: "exercises" },
+  { key: "AI Dieting", label: "AI Diet",  icon: "nutrition" },
+  { key: "about-us",  label: "About-us",  icon: "about-us" },
+  { key: "profile",   label: "Profile",   icon: "profile" },
+];
 
 export default function Sidebar({ activePage = "home", onNavigate, onLogout }) {
   const handleClick = (item) => {
-    if (AVAILABLE_PAGES.includes(item)) onNavigate?.(item);
+    if (NAV_ITEMS.includes(item)) onNavigate?.(item);
   };
 
   return (
@@ -30,15 +35,14 @@ export default function Sidebar({ activePage = "home", onNavigate, onLogout }) {
       <div className="sidebar-avatar" aria-hidden="true">NH</div>
 
       <nav className="sidebar-nav">
-        {AVAILABLE_PAGES.map((item) => (
+        {NAV_ITEMS.map(({ key, label, icon }) => (
           <button
-            key={item}
-            className={`sidebar-nav-item ${activePage === item ? "is-active" : ""}`}
-            onClick={() => handleClick(item)}
-            type="button"
+            key={key}
+            className={`sidebar-nav-item ${activePage === key ? "is-active" : ""}`}
+            onClick={() => onNavigate?.(key)}
           >
-            <span className="sidebar-nav-icon"><NavIcon name={item} /></span>
-            <span className="sidebar-nav-label">{item[0].toUpperCase() + item.slice(1)}</span>
+            <span className="sidebar-nav-icon"><NavIcon name={icon} /></span>
+            {label}
           </button>
         ))}
       </nav>
