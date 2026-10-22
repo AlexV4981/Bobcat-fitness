@@ -22,3 +22,5 @@ backend/.env
 # OS
 .DS_Store
 Thumbs.db
+# Generated per-set/per-rep movement recordings stay local to this backend.
+backend/movement_data/
