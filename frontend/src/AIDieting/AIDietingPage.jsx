@@ -106,12 +106,12 @@ export default function AIDietingPage({ userGoal = 'Build Endurance' }) {
   // it can update or check for you options on how to better your own
   // weekly bar charts.
   return (
-    <div style={{ padding: '2.5rem', maxWidth: '1400px', margin: '0 auto', fontFamily: 'inherit', color: '#1a202c', display: 'flex', flexDirection: 'column', gap: '2rem', backgroundColor: 'transparent', minHeight: '100vh' }}>
+    <div style={{ fontFamily: 'inherit', color: '#1a202c', display: 'flex', flexDirection: 'column', gap: '2rem', backgroundColor: 'transparent' }}>
       <header style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '1.25rem' }}>
-        <h1 style={{ margin: 0, fontSize: '2.25rem', fontWeight: '700', letterSpacing: '-0.025em', color: '#1a202c' }}>🥗 AI Dieting Nutrition Console</h1>
+        <h1 style={{ margin: '1rem', fontSize: '2.25rem', fontWeight: '700', letterSpacing: '-0.025em', color: '#1a202c' }}>🥗 AI Dieting Nutrition Console</h1>
         <p style={{ margin: '0.35rem 0 0 0', opacity: 0.8, fontSize: '1.05rem', color: '#2d3748' }}>Coordinate live machine learning optimization profiles with macro parameter charts instantly.</p>
       </header>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '2.5rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(500px, 100%), 1fr))', gap: '2.5rem', alignItems: 'start' }}>
         <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', height: '600px', overflow: 'hidden' }}> 
           <div style={{ padding: '1.25rem', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.01)' }}>
             <span style={{ fontWeight: '600', fontSize: '1.1rem', color: '#1a202c' }}>💬 Consultation Stream</span>
