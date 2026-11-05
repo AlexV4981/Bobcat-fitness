@@ -168,8 +168,7 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
       <div className={`cam-grid${debugExpanded ? " cam-grid--debug" : ""}`}>
         <section className="cam-video" aria-label="Camera stream">
           <div className="cam-video-bar">
-            <span className="cam-live-dot" aria-hidden="true" />
-            <span>Camera Stream Monitoring View</span>
+            <span>Movement capture</span>
           </div>
           <div className="cam-video-stage">
             <WebcamConnection
