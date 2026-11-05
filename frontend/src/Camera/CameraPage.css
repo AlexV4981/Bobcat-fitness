@@ -18,7 +18,7 @@
 
 .cam-grid--debug .cam-video-stage {
   min-height: 0;
-  padding: 12px;
+  padding: 0;
 }
 
 .cam-grid--debug .camera-card {
@@ -30,7 +30,9 @@
 /* ---------- Video ---------- */
 
 .cam-video {
-  background: var(--hero-bg);
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-card);
@@ -42,26 +44,20 @@
   gap: 8px;
   padding: 14px 20px;
   font-size: 12px;
-  font-weight: 500;
-  color: #9aa294;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.cam-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ef4444;
-  box-shadow: 0 0 8px #ef4444;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--border);
 }
 
 .cam-video-stage {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 400px;
-  padding: 24px;
-  background: #030712;
+  min-width: 0;
+  padding: 0;
+  background: var(--surface);
 }
 
 /* ---------- Tracker panel ---------- */
