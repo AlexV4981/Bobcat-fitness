@@ -110,14 +110,6 @@ export default function App() {
       </div>
     );
   }
-  if (page === 'exercises') {
-    return (
-      <div className="home">
-        <Sidebar activePage="exercises" onNavigate={setPage} onLogout={handleLogout} />
-        <ExercisesPage />
-      </div>
-    );
-  }
   if (page === 'AI Dieting') {
     return (
       <div className="home">
@@ -125,6 +117,14 @@ export default function App() {
         <main className="content">
           <AIDietingPage userGoal={user.goal} />
         </main>
+      </div>
+    );
+  }
+  if (page === 'exercises') {
+    return (
+      <div className="home">
+        <Sidebar activePage="exercises" onNavigate={setPage} onLogout={handleLogout} />
+        <ExercisesPage />
       </div>
     );
   }

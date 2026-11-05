@@ -18,9 +18,9 @@ import NavIcon from "./NavIcon";
 const NAV_ITEMS = [
   { key: "home",      label: "Home",      icon: "home" },
   { key: "camera",    label: "Camera",    icon: "camera" },
+  { key: "ai-workout", label: "AI Workout", icon: "ai-workout" },
   { key: "workouts",  label: "Workouts",  icon: "workouts" },
   { key: "exercises", label: "Exercises", icon: "exercises" },
-  { key: "ai-workout", label: "AI Workout", icon: "ai-workout" },
   { key: "AI Dieting", label: "AI Diet",  icon: "nutrition" },
   { key: "about-us",  label: "About-us",  icon: "about-us" },
   { key: "profile",   label: "Profile",   icon: "profile" },
