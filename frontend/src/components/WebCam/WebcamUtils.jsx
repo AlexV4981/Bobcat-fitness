@@ -36,6 +36,14 @@ async function expectJson(response) {
   return response.json()
 }
 
+export async function getCameraCalibration(cameraId, signal) {
+  return expectJson(await fetch(getCameraApiUrl(cameraId, 'calibration'), { signal }))
+}
+
+export async function recalibrateCamera(cameraId) {
+  return expectJson(await fetch(getCameraApiUrl(cameraId, 'calibration'), { method: 'POST' }))
+}
+
 //start a fresh partial rep for the selected exercise; this writes no JSON.
 export async function startExerciseRecording(cameraId, exercise) {
   const response = await fetch(getCameraApiUrl(cameraId, 'recording/start'), {

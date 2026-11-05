@@ -7,6 +7,8 @@ import {
   getProcessedCameraUrl,
   getCameraWebSocketUrl,
   startExerciseRecording,
+  getCameraCalibration,
+  recalibrateCamera,
 } from './WebcamUtils'
 
 //socket_open is the value for the browser to open the websocket.
@@ -26,6 +28,8 @@ function WebcamConnection({ exercise = 'Exercise', debugExpanded = false, onTogg
   const [cameraState, setCameraState] = useState('off')
   const [streamState, setStreamState] = useState('offline')
   const [errorMessage, setErrorMessage] = useState('')
+  const [calibration, setCalibration] = useState(null)
+  const [recalibrating, setRecalibrating] = useState(false)
 
   //stops uploading frames but camera is not stopped yet
   const stopFrameUpload = useCallback(() => {
@@ -41,6 +45,7 @@ function WebcamConnection({ exercise = 'Exercise', debugExpanded = false, onTogg
       socketRef.current = null
     }
     setStreamState('offline')
+    setCalibration(null)
   }, [])
 
   //stops the camera tracks then clears the video then becomes off
@@ -157,6 +162,41 @@ function WebcamConnection({ exercise = 'Exercise', debugExpanded = false, onTogg
   useEffect(() => stopWebcam, [stopWebcam])
 
   useEffect(() => {
+    if (streamState !== 'streaming') return
+    const controller = new AbortController()
+    let timer
+    const poll = async () => {
+      try {
+        const status = await getCameraCalibration(CAMERA_ID, controller.signal)
+        if (!controller.signal.aborted) setCalibration(status)
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setCalibration({ message: `Tracking status unavailable: ${error.message}` })
+        }
+      } finally {
+        if (!controller.signal.aborted) timer = window.setTimeout(poll, 500)
+      }
+    }
+    poll()
+    return () => {
+      controller.abort()
+      window.clearTimeout(timer)
+    }
+  }, [streamState])
+
+  const handleRecalibrate = async () => {
+    setRecalibrating(true)
+    setErrorMessage('')
+    try {
+      setCalibration(await recalibrateCamera(CAMERA_ID))
+    } catch (error) {
+      setErrorMessage(error.message)
+    } finally {
+      setRecalibrating(false)
+    }
+  }
+
+  useEffect(() => {
     if (cameraState !== 'on') return
     //chnging the excersise while camera stays on resets partial recordings backend
     //backend preserves the set number for repeated starts of the same name excersises
@@ -171,11 +211,11 @@ function WebcamConnection({ exercise = 'Exercise', debugExpanded = false, onTogg
   return (
     <section className="camera-card" aria-labelledby="camera-title">
       <div className="camera-copy">
-        <p className="eyebrow">Live movement capture</p>
-        <h1 id="camera-title">OpenCV camera bridge</h1>
+        <h2 id="camera-title">OpenCV camera bridge</h2>
         <p>
-          Start your camera to send JPEG frames to the local Python backend. Audio is
-          never requested.
+          Start your camera, step back until your full body is visible, and hold
+          both arms straight out at shoulder height for two seconds. Face a light
+          source while calibrating.
         </p>
       </div>
 
@@ -202,7 +242,7 @@ function WebcamConnection({ exercise = 'Exercise', debugExpanded = false, onTogg
       <div className="camera-controls">
         <button
           type="button"
-          className="camera-button"
+          className="cam-btn cam-btn--primary"
           disabled={cameraState === 'starting'}
           onClick={isCameraOn ? stopWebcam : startWebcam}
         >
@@ -210,13 +250,30 @@ function WebcamConnection({ exercise = 'Exercise', debugExpanded = false, onTogg
         </button>
         <button
           type="button"
-          className="camera-button camera-button--debug"
+          className="cam-btn cam-btn--ghost"
+          disabled={!isCameraOn || streamState !== 'streaming' || recalibrating}
+          onClick={handleRecalibrate}
+        >
+          {recalibrating ? 'Resetting…' : 'Recalibrate T-pose'}
+        </button>
+        <button
+          type="button"
+          className="cam-btn cam-btn--ghost"
           aria-pressed={debugExpanded}
           onClick={onToggleDebug}
         >
           {debugExpanded ? 'Exit debug view' : 'Expand debug view'}
         </button>
       </div>
+
+      {isCameraOn && streamState === 'streaming' && calibration && (
+        <div className="camera-calibration" role="status">
+          <p>{calibration.message}</p>
+          {calibration.calibrated === false && (
+            <progress max="1" value={calibration.progress || 0} aria-label="T-pose calibration progress" />
+          )}
+        </div>
+      )}
 
       {errorMessage && (
         <p className="camera-error" role="alert">

@@ -57,6 +57,12 @@ class RepSessionStore:
         with self._lock:
             return self._state(camera_id)
 
+    def pause(self, camera_id: str) -> None:
+        with self._lock:
+            counter = self._counter(camera_id)
+            if counter:
+                counter.pause()
+
     def set_exercise(self, camera_id: str, exercise: str) -> dict:
         """Select the exercise to count (resets the count)."""
         with self._lock:

@@ -200,6 +200,10 @@ class RepCounter:
         """Manual correction (the +/- buttons); never goes below zero."""
         self.count = max(0, self.count + delta)
 
+    def pause(self) -> None:
+        """Discard interrupted motion while preserving completed reps."""
+        self._reset_motion()
+
     def _reset_motion(self) -> None:
         self.phase = Phase.WAITING
         self.tracking = False

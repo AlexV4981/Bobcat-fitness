@@ -2,6 +2,7 @@ import math
 import unittest
 
 from app.services.rep_session import RepSessionStore
+from app.services.depth import PoseStabilizer
 from app.Webcam_utilities.rep_counter import (
     EXERCISES,
     Landmark,
@@ -63,6 +64,25 @@ class JointAngleTests(unittest.TestCase):
 
 
 class RepCounterTests(unittest.TestCase):
+    def test_stability_layer_preserves_full_reps_for_all_four_exercises(self):
+        # Slow complete motions, with realistic pauses at both endpoints,
+        # must survive coordinate filtering plus the counter's angle smoothing.
+        extra = {"pushup": {"body": "horizontal"}, "pullup": {"a_dir": 90.0}}
+        for key, config in EXERCISES.items():
+            with self.subTest(exercise=key):
+                stabilizer = PoseStabilizer()
+                counter = RepCounter(key)
+                start, bottom = config.start_angle + 15, config.peak_angle - 20
+                angles = [start] * 12
+                for _ in range(3):
+                    descent = [start + (bottom - start) * i / 30 for i in range(31)]
+                    angles += descent + [bottom] * 12 + descent[::-1] + [start] * 24
+                for frame, angle in enumerate(angles):
+                    image = pose_with_angle(key, angle, **extra.get(key, {}))
+                    stable = stabilizer.update(image, image, frame / 30)
+                    counter.update(*stable.counter_landmarks(), now=frame / 30)
+                self.assertEqual(counter.count, 3)
+
     def test_counts_full_reps_for_each_exercise(self):
         extra = {"pushup": {"body": "horizontal"}, "pullup": {"a_dir": 90.0}}
         for key, cfg in EXERCISES.items():

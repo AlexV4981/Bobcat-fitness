@@ -18,14 +18,17 @@ VECTOR_COLOR = (255, 80, 220)
 VECTOR_FONT_SCALE = 0.38
 VECTOR_LABEL_OFFSET = 12
 
-_landmark_origins: dict[int, Position3D] = {}
+_landmark_origins: dict[str, dict[int, Position3D]] = {}
 _origin_lock = Lock()
 
 
-def reset_landmark_origins() -> None:
+def reset_landmark_origins(camera_id: str | None = None) -> None:
     #For now waits until full body in view then assumes thats 0,0,0 for each landmark
     with _origin_lock:
-        _landmark_origins.clear()
+        if camera_id is None:
+            _landmark_origins.clear()
+        else:
+            _landmark_origins.pop(camera_id, None)
 
 #will determine what the vector for the landmark is
 def calculate_landmark_vectors(
@@ -33,16 +36,19 @@ def calculate_landmark_vectors(
     required_indexes: Sequence[int],
     frame_width: int,
     frame_height: int,
+    camera_id: str = "default",
 ) -> dict[int, PositionVector]:
     #Later can be replaced with actual calibration
     with _origin_lock:
-        if not _landmark_origins:
+        if camera_id not in _landmark_origins:
             if any(index not in positions for index in required_indexes):
                 return {}
-            _landmark_origins.update(
-                (index, positions[index]) for index in required_indexes
-            )
-        origins = dict(_landmark_origins)
+            # Each camera calibrates independently; another user's pose must
+            # never become this session's displacement origin.
+            _landmark_origins[camera_id] = {
+                index: positions[index] for index in required_indexes
+            }
+        origins = dict(_landmark_origins[camera_id])
 
     return {
         index: displacement_from_origin(
@@ -61,6 +67,7 @@ def draw_landmark_vectors(
     screen_points: Mapping[int, ScreenPoint],
     positions: Mapping[int, Position3D],
     required_indexes: Sequence[int],
+    camera_id: str = "default",
 ) -> bool:
     #Draws the vector on the landmark
     height, width = frame.shape[:2]
@@ -69,6 +76,7 @@ def draw_landmark_vectors(
         required_indexes,
         width,
         height,
+        camera_id=camera_id,
     )
     if not vectors:
         return False

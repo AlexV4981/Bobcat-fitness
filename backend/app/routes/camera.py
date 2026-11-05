@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from app.services.camera_stream import MAX_FRAME_BYTES, camera_streams
 from app.services.movement_recorder import movement_recorders
 from app.services.rep_session import rep_sessions
-from app.Webcam_utilities.SkeletonOverlay import process_jpeg_frame
+from app.Webcam_utilities.SkeletonOverlay import pose_tracking, process_jpeg_frame
 from app.Webcam_utilities.WebcamCalibrator import reset_landmark_origins
 
 router = APIRouter(prefix="/api/camera", tags=["camera"])
@@ -50,7 +50,9 @@ async def camera_websocket(
 #accepts the websocket but doest not connect to the camera, producer records that its connected
     await websocket.accept()
     #Each new camera session gets a new pose origin lock basically when full body in view thats the origin
-    reset_landmark_origins()
+    reset_landmark_origins(camera_id)
+    # A new connection starts with fresh model and numerical filter histories.
+    await asyncio.to_thread(pose_tracking.reset, camera_id)
     try:
         #recording starts with the given excersise that is set on the camera page later updates should make it auto switch to the new workouts after pose estimation
         movement_recorders.start(camera_id, exercise)
@@ -88,6 +90,10 @@ async def camera_websocket(
         pass
     finally:
         await camera_streams.producer_disconnected(camera_id)
+        state = await camera_streams.snapshot(camera_id)
+        if state.producers == 0:
+            await asyncio.to_thread(pose_tracking.reset, camera_id)
+            reset_landmark_origins(camera_id)
 
 #Gets the status from the camera using camera_ID
 @router.get("/{camera_id}/status")
@@ -102,6 +108,22 @@ async def camera_status(camera_id: str) -> dict[str, int | float | bool | None |
         "sequence": state.sequence,
         "updated_at": state.updated_at,
     }
+
+
+@router.get("/{camera_id}/calibration")
+async def camera_calibration(camera_id: str) -> dict:
+    validate_camera_id(camera_id)
+    return await asyncio.to_thread(pose_tracking.status, camera_id)
+
+
+@router.post("/{camera_id}/calibration")
+async def recalibrate_camera(camera_id: str) -> dict:
+    validate_camera_id(camera_id)
+    status = await asyncio.to_thread(pose_tracking.recalibrate, camera_id)
+    reset_landmark_origins(camera_id)
+    rep_sessions.pause(camera_id)
+    movement_recorders.recorder(camera_id).reset_samples()
+    return status
 
 
 @router.post("/{camera_id}/recording/start")

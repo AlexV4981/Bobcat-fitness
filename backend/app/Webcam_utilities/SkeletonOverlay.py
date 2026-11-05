@@ -1,6 +1,6 @@
 #Draw a simple skeleton on the human body
 
-from threading import Lock
+import math
 
 import cv2
 import mediapipe as mp
@@ -11,7 +11,8 @@ from app.Webcam_utilities.WebcamCalibrator import draw_landmark_vectors
 from app.services.LandMarkVectors import TRACKED_LANDMARK_INDEXES
 from app.services.movement_recorder import movement_recorders
 from app.services.rep_session import rep_sessions
-from app.Webcam_utilities.rep_counter import Landmark
+from app.services.depth.tracking import PoseTrackingStore
+from app.services.depth.lighting import prepare_pose_frame
 
 
 #main body parts skipping small hand and face points
@@ -46,22 +47,29 @@ if BODY_LANDMARK_INDEXES != TRACKED_LANDMARK_INDEXES:
 #minimum camera quality and color of the skeleton overlay
 MIN_VISIBILITY = 0.45
 SKELETON_COLOR = (80, 230, 180)
+UNCERTAIN_COLOR = (140, 140, 140)
 
-pose = mp.solutions.pose.Pose(
-    static_image_mode=False,
-    model_complexity=1,
-    smooth_landmarks=True,
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5,
-)
 
-#MediaPipe tracks information between frames only one thread can use it at a time
-pose_lock = Lock()
+def _create_pose():
+    """Give each camera its own SDK temporal history, created only when needed."""
+    return mp.solutions.pose.Pose(
+        static_image_mode=False,
+        model_complexity=1,
+        smooth_landmarks=True,
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5,
+    )
+
+
+pose_tracking = PoseTrackingStore(_create_pose)
 
 #generates a landmark point on the body using joints
 def landmark_point(landmarks, index: int, width: int, height: int):
     landmark = landmarks[index]
-    if landmark.visibility < MIN_VISIBILITY:
+    # Invalid/missing samples must never reach integer conversion or drawing.
+    if landmark is None or not all(math.isfinite(value) for value in (
+        landmark.x, landmark.y, landmark.z, landmark.visibility,
+    )) or landmark.visibility < MIN_VISIBILITY or not (0 <= landmark.x <= 1 and 0 <= landmark.y <= 1):
         return None
 
     x = int(landmark.x * width)
@@ -91,12 +99,6 @@ def draw_head(frame: MatLike, landmarks) -> None:
     cv2.circle(frame, center, radius, (10, 25, 30), 8, cv2.LINE_AA)
     cv2.circle(frame, center, radius, SKELETON_COLOR, 4, cv2.LINE_AA)
 
-#copies MediaPipe landmarks into plain tuples so the rep counter never touches MediaPipe objects
-def to_landmarks(landmark_list) -> list[Landmark] | None:
-    if landmark_list is None:
-        return None
-    return [Landmark(l.x, l.y, l.z, l.visibility) for l in landmark_list.landmark]
-
 #feeds the pose to the automatic rep counter (None = nobody detected)
 def count_reps(camera_id: str, image_landmarks, world_landmarks) -> None:
     if not rep_sessions.process(camera_id, image_landmarks, world_landmarks):
@@ -111,12 +113,22 @@ def count_reps(camera_id: str, image_landmarks, world_landmarks) -> None:
 
 #find the person and draw their main limbs
 def draw_skeleton(frame: MatLike, camera_id: str = "default") -> MatLike:
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    rgb_frame, lighting = prepare_pose_frame(frame)
 
-    with pose_lock:
-        result = pose.process(rgb_frame)
-        image_landmarks = to_landmarks(result.pose_landmarks)
-        world_landmarks = to_landmarks(result.pose_world_landmarks)
+    result, stable = pose_tracking.process(camera_id, rgb_frame, lighting=lighting)
+    can_record = stable.calibrated and stable.lighting != "too_dark"
+    if not can_record:
+        # Never stitch an unfinished exercise across calibration or darkness.
+        rep_sessions.pause(camera_id)
+        movement_recorders.recorder(camera_id).reset_samples()
+    if stable.lighting != "good" or not stable.calibrated:
+        label = ("Too dark - add light in front of you" if stable.lighting == "too_dark" else
+                 "Low light - add light in front of you" if stable.lighting == "dim" else
+                 f"Hold a full-body T-pose: {round(stable.calibration_progress * 100)}%")
+        cv2.putText(frame, label, (12, 28), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    # The adapter masks joints unless both their image and depth are usable.
+    image_landmarks, world_landmarks = stable.counter_landmarks()
 
     if not result.pose_landmarks:
         #empty pose cannot pass the filter, so this creates no saved sample.
@@ -124,44 +136,59 @@ def draw_skeleton(frame: MatLike, camera_id: str = "default") -> MatLike:
         count_reps(camera_id, None, None)
         return frame
 
-    landmarks = result.pose_landmarks.landmark
+    # Rejected joints stay absent. Falling back to the raw prediction here
+    # would bring the exact sprawling outlier back into the overlay.
+    display_landmarks = stable.image
     height, width = frame.shape[:2]
 
     #draws a dark outline first so the skeleton is easy to see on light video.
     for start_index, end_index in BODY_CONNECTIONS:
-        start = landmark_point(landmarks, start_index, width, height)
-        end = landmark_point(landmarks, end_index, width, height)
+        start = landmark_point(display_landmarks, start_index, width, height)
+        end = landmark_point(display_landmarks, end_index, width, height)
         if start is None or end is None:
             continue
         cv2.line(frame, start, end, (10, 25, 30), 10, cv2.LINE_AA)
-        cv2.line(frame, start, end, SKELETON_COLOR, 5, cv2.LINE_AA)
+        reliable = all(
+            stable.image[index] is not None and stable.world[index] is not None
+            for index in (start_index, end_index)
+        )
+        color = SKELETON_COLOR if reliable else UNCERTAIN_COLOR
+        cv2.line(frame, start, end, color, 5, cv2.LINE_AA)
 
     joint_indexes = BODY_LANDMARK_INDEXES
     screen_points = {}
     positions = {}
     for index in joint_indexes:
-        point = landmark_point(landmarks, index, width, height)
+        point = landmark_point(display_landmarks, index, width, height)
         if point is not None:
-            landmark = landmarks[index]
-            screen_points[index] = point
-            positions[index] = (landmark.x, landmark.y, landmark.z)
+            landmark = stable.image[index]
+            reliable = landmark is not None and stable.world[index] is not None
+            if reliable:
+                screen_points[index] = point
+                # Preserve the recorder's image-coordinate schema and threshold.
+                positions[index] = (landmark.x, landmark.y, landmark.z)
             cv2.circle(frame, point, 7, (10, 25, 30), -1, cv2.LINE_AA)
-            cv2.circle(frame, point, 4, SKELETON_COLOR, -1, cv2.LINE_AA)
+            color = SKELETON_COLOR if reliable else UNCERTAIN_COLOR
+            cv2.circle(frame, point, 4, color, -1, cv2.LINE_AA)
 
-    # Send raw coordinates only for visible BODY_CONNECTIONS landmarks. Filtering
-    # happens in memory here; Count Rep later writes accepted poses to disk.
-    # In an accepted pose, missing tracked landmarks receive -1 vectors.
-    movement_recorders.record_frame(camera_id, positions)
+    # Only validated, filtered joints reach recording. Legacy -1 placeholders
+    # are introduced by serialization, never fed back into the stability layer.
+    movement_recorders.record_frame(camera_id, positions if can_record else {})
     #counted after recording so the frame that finishes a rep is part of that rep's JSON
-    count_reps(camera_id, image_landmarks, world_landmarks)
+    count_reps(camera_id, image_landmarks if can_record else None,
+               world_landmarks if can_record else None)
 
-    draw_head(frame, landmarks)
+    draw_head(frame, display_landmarks)
+
+    if not can_record:
+        return frame
 
     calibrated = draw_landmark_vectors(
         frame,
         screen_points,
         positions,
         joint_indexes,
+        camera_id=camera_id,
     )
     if not calibrated:
         cv2.putText(
