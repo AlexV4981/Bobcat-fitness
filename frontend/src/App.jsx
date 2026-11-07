@@ -9,6 +9,7 @@ import ExercisesPage from "./Exercises/ExercisesPage";
 import CameraPage from './Camera/CameraPage';
 import AboutUsPage from './AboutUsPage';
 import AIDietingPage from './AIDieting/AIDietingPage'; 
+import AIWorkoutPage from './AIWorkout/AIWorkoutPage';
 import './App.css';
 import { isSyntheticEmail } from './services/authService';
 import { updateProfile, uploadAvatar, parseHeight, formatHeight, parseWeight } from './services/profileService';
@@ -109,6 +110,16 @@ export default function App() {
       </div>
     );
   }
+  if (page === 'AI Dieting') {
+    return (
+      <div className="home">
+        <Sidebar activePage="AI Dieting" onNavigate={setPage} onLogout={handleLogout} />
+        <main className="content">
+          <AIDietingPage userGoal={user.goal} />
+        </main>
+      </div>
+    );
+  }
   if (page === 'exercises') {
     return (
       <div className="home">
@@ -117,12 +128,12 @@ export default function App() {
       </div>
     );
   }
-  if (page === 'AI Dieting') {
+  if (page === 'ai-workout') {
     return (
       <div className="home">
-        <Sidebar activePage="AI Dieting" onNavigate={setPage} onLogout={handleLogout} />
+        <Sidebar activePage="ai-workout" onNavigate={setPage} onLogout={handleLogout} />
         <main className="content">
-          <AIDietingPage userGoal={user.goal} />
+          <AIWorkoutPage />
         </main>
       </div>
     );

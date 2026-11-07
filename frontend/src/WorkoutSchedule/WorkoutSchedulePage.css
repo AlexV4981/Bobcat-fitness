@@ -1,10 +1,6 @@
-/* WorkoutSchedulePage styles
- * Everything is scoped under .ws-page / .ws-* so it can't collide with
- * HomePage.css. Colors are tokens on .ws-page; to match the rest of the app,
- * point them at your global variables (e.g. --ws-green: var(--accent-dark)).
- * The chart colors in WorkoutSchedulePage.jsx (CHART_COLORS) should be kept
- * in sync with these.
- */
+/* ==========================================================================
+   WorkoutSchedulePage Scoped Styles (.ws-*)
+   ========================================================================== */
 
 .ws-page {
   --ws-ink: #0F100E;
@@ -16,14 +12,38 @@
   --ws-green: #768e5b;
   --ws-orange: #B8641A;
   --ws-grey-line: #C9C9C2;
+  --ws-hero-bg: #471a1a;
+  --ws-accent: #dbb15b;
+  --ws-tint-peach: #f6eef0;
+  --ws-tint-green: #d0e79d;
+  --ws-tint-amber: #f4d8d3;
+  --ws-tint-blue: #b7d3e4;
 
   color: var(--ws-ink);
+  padding: 24px;
+  box-sizing: border-box;
 }
 
-/* ---------- Header ---------- */
+.ws-page * {
+  box-sizing: border-box;
+}
+
+/* ---------- Common Header & Badges ---------- */
 
 .ws-header {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
+}
+
+.ws-badge {
+  display: inline-block;
+  background: var(--ws-hero-bg);
+  color: var(--ws-accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border-radius: 12px;
 }
 
 .ws-header-dates {
@@ -34,13 +54,33 @@
 
 .ws-header-title {
   color: var(--ws-ink);
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
   margin: 4px 0 0;
   letter-spacing: -0.01em;
 }
 
-/* ---------- Layout ---------- */
+.ws-subtitle {
+  font-size: 13.5px;
+  color: var(--ws-muted);
+  margin: 4px 0 0 0;
+}
+
+/* ---------- Dual Column Layout ---------- */
+
+.ws-dashboard-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 28px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 960px) {
+  .ws-dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+}
 
 .ws-grid {
   display: grid;
@@ -48,13 +88,307 @@
   gap: 24px;
 }
 
+@media (max-width: 860px) {
+  .ws-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .ws-card {
   background: var(--ws-surface);
   border: 1px solid var(--ws-border);
   border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-/* ---------- Progress chart ---------- */
+/* ---------- AI Coach Panel (Left) ---------- */
+
+.ws-ai-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.ws-ai-card {
+  display: flex;
+  flex-direction: column;
+  height: 520px;
+  overflow: hidden;
+}
+
+.ws-chat-messages {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ws-chat-bubble {
+  display: flex;
+  gap: 10px;
+  max-width: 88%;
+}
+
+.ws-chat-ai {
+  align-self: flex-start;
+}
+
+.ws-chat-user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.ws-chat-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ebe0df;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.ws-chat-text {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.ws-chat-ai .ws-chat-text {
+  background: var(--ws-tint-peach);
+  color: var(--ws-ink);
+  border-top-left-radius: 2px;
+}
+
+.ws-chat-user .ws-chat-text {
+  background: var(--ws-hero-bg);
+  color: #ffffff;
+  border-top-right-radius: 2px;
+}
+
+.ws-chat-form {
+  padding: 12px 14px;
+  border-top: 1px solid var(--ws-border);
+  display: flex;
+  align-items: center; /* Centers input and send button vertically */
+  gap: 10px;
+  background: var(--ws-surface);
+}
+
+.ws-chat-form input {
+  flex: 1;
+  height: 40px; /* Fixed height for clean alignment */
+  border: 1px solid var(--ws-border);
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 13.5px;
+  line-height: 40px; /* Aligns cursor & text perfectly in center */
+  outline: none;
+  background: #ffffff !important; /* Force solid white background */
+  color: var(--ws-ink) !important; /* Force dark visible text color */
+  box-sizing: border-box;
+}
+
+.ws-chat-form input::placeholder {
+  color: #8a8a83;
+  opacity: 1;
+}
+
+.ws-chat-form input:focus {
+  border-color: var(--ws-green);
+  box-shadow: 0 0 0 2px rgba(118, 142, 91, 0.15);
+}
+
+.ws-send-btn {
+  height: 40px; /* Matches input height */
+  background: var(--ws-hero-bg);
+  color: var(--ws-accent);
+  border: none;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.ws-send-btn:hover {
+  opacity: 0.9;
+}
+
+/* ---------- Preset Icon Grid (Right) ---------- */
+
+.ws-presets-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.ws-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+  max-height: 520px; /* Keeps grid matching the height of AI Card */
+  overflow-y: auto;  /* Allows scrolling through multiple added presets */
+  padding-right: 6px; /* Smooth padding for scrollbar */
+}
+
+.ws-preset-card {
+  background: var(--ws-surface);
+  border: 1px solid var(--ws-border);
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ws-preset-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+  border-color: var(--ws-green);
+}
+
+.ws-preset-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.ws-preset-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--ws-tint-peach);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+}
+
+.ws-preset-category {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ws-muted);
+}
+
+.ws-preset-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 4px 0 2px 0;
+  color: var(--ws-ink);
+}
+
+.ws-preset-sub {
+  font-size: 12.5px;
+  color: var(--ws-muted);
+  margin: 0;
+}
+
+.ws-preset-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ws-border);
+}
+
+.ws-preset-progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ws-muted-strong);
+  margin-bottom: 6px;
+}
+
+.ws-progress-bar {
+  height: 6px;
+  background: #EDEDE9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ws-progress-fill {
+  height: 100%;
+  background: var(--ws-green);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.ws-preset-count {
+  font-size: 11px;
+  color: var(--ws-muted);
+  margin-top: 6px;
+  text-align: right;
+}
+
+.ws-status-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+}
+
+.ws-status-badge--active {
+  background: var(--ws-tint-green);
+  color: #2e4d10;
+}
+
+.ws-status-badge--in-progress {
+  background: var(--ws-tint-blue);
+  color: #1a425b;
+}
+
+.ws-status-badge--upcoming {
+  background: var(--ws-tint-amber);
+  color: #612217;
+}
+
+.ws-presets-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ws-presets-grid::-webkit-scrollbar-track {
+  background: var(--ws-border);
+  border-radius: 10px;
+}
+
+.ws-presets-grid::-webkit-scrollbar-thumb {
+  background: #c9c9c2;
+  border-radius: 10px;
+}
+
+.ws-presets-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--ws-green);
+}
+
+/* ---------- Detail View Controls ---------- */
+
+.ws-back-btn {
+  background: transparent;
+  border: none;
+  color: var(--ws-green);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 16px;
+}
+
+.ws-back-btn:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Progress Chart (Original Styles Preserved) ---------- */
 
 .ws-chart-card {
   padding: 24px 20px 12px;
@@ -117,7 +451,7 @@
   color: var(--ws-muted-strong);
 }
 
-/* ---------- Chart tooltip ---------- */
+/* ---------- Chart Tooltip ---------- */
 
 .ws-tooltip {
   background: #1C1D1B;
@@ -138,7 +472,7 @@
   opacity: 0.7;
 }
 
-/* ---------- Exercise panel (right side, scrolls) ---------- */
+/* ---------- Exercise Panel (Right Side) ---------- */
 
 .ws-exercises {
   padding: 20px 20px 8px;
@@ -192,7 +526,7 @@
   padding: 0;
 }
 
-/* ---------- Exercise row ---------- */
+/* ---------- Exercise Row ---------- */
 
 .ws-exercise-row {
   display: flex;
@@ -251,7 +585,7 @@
   margin-top: 1px;
 }
 
-/* ---------- Status pill ---------- */
+/* ---------- Status Pill ---------- */
 
 .ws-status {
   flex-shrink: 0;
@@ -279,12 +613,4 @@
 .ws-status--upcoming {
   background: #E9E9E5;
   color: #3F403A;
-}
-
-/* ---------- Responsive ---------- */
-
-@media (max-width: 860px) {
-  .ws-grid {
-    grid-template-columns: 1fr;
-  }
 }
