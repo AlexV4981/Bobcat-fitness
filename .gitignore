@@ -11,9 +11,9 @@ __pycache__/
 *.db
 
 # Environment files
-.env
-frontend/.env
-backend/.env
+.env*
+frontend/.env*
+backend/.env*
 
 # IDE
 .vscode/
