@@ -211,7 +211,7 @@ function WebcamConnection({ exercise = 'Exercise', debugExpanded = false, onTogg
   return (
     <section className="camera-card" aria-labelledby="camera-title">
       <div className="camera-copy">
-        <h2 id="camera-title">Live form check</h2>
+        <h2 id="camera-title">OpenCV camera bridge</h2>
         <p>
           Start your camera, step back until your full body is visible, and hold
           both arms straight out at shoulder height for two seconds. Face a light
