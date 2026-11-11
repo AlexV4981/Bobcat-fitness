@@ -1,5 +1,9 @@
 # Depth and stability
 
+For the opt-in ONNX inference foundation and its current limitations, see
+[ONNX.md](ONNX.md). Calibrated metric reconstruction is implemented in
+[RECONSTRUCTION.md](RECONSTRUCTION.md); the guided silhouette remains a later step.
+
 The live camera path now runs through `PoseTrackingStore` and `PoseStabilizer`
 before drawing, recording, or automatic rep counting. No new dependencies are
 required. The implementation follows the confidence gating and temporal filtering
@@ -25,7 +29,9 @@ resetting or disconnecting one camera does not clear another camera's filters.
 - `stability.py`: explicit per-joint validity, three-frame warmup, speed-based
   outlier rejection, loss recovery, and separate image/world coordinate histories.
 - `filters.py`: causal One Euro coordinate filtering using actual timestamps.
-- `tracking.py`: independent MediaPipe models and filters per camera, serialized
+- `reconstruction.py`: camera-specific intrinsics, local depth quality gates,
+  lens correction, and hip-relative metric joint reconstruction for ONNX results.
+- `tracking.py`: independent model instances and filters per camera, serialized
   access, explicit reset, and a four-camera LRU limit with model cleanup.
 - `evaluation.py`: valid-frame coverage, stationary angle jitter, and optional
   error against frame-aligned reference angles.
@@ -33,7 +39,9 @@ resetting or disconnecting one camera does not clear another camera's filters.
 ## Coordinates and missing data
 
 Image x/y are normalized by width/height; image z uses roughly the x scale.
-World coordinates are estimated meters relative to the hips. World coordinates
+World coordinates are estimated meters relative to the hips. The ONNX backend
+requires explicit camera intrinsics and estimated optical-axis depth; MediaPipe
+provides its own world estimates. World coordinates
 drive live 3D angles; image coordinates place the overlay. Live counting pauses
 for joints without valid world depth instead of substituting front-view 2D angles.
 
