@@ -284,6 +284,11 @@ with `.venv` activated:
 uvicorn app.main:app --reload
 ```
 
+Gemini is optional for local development. Without `DIETING_KEY`, `GOOGLE_API_KEY`, or
+`GEMINI_API_KEY`, the diet chat returns a labeled demo response and the backend
+still starts. To force the bypass with a key configured, run
+`GEMINI_BYPASS=true uvicorn app.main:app --reload`.
+
 The backend should start at:
 
 ```text
