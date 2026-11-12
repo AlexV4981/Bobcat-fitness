@@ -37,10 +37,10 @@ import { logCompletedSet } from "../lib/workoutLog";
 
 // Values become backend folder/file names, e.g. Push-Up_Set1/Push-Up_Rep1.json.
 const EXERCISE_OPTIONS = [
-  { value: "Push-Up", label: "Push-ups 🧱" },
-  { value: "Pull-Up", label: "Pull-ups 🦾" },
-  { value: "Squat", label: "Squats 🦵" },
-  { value: "Sit-Up", label: "Sit-ups 🧘" },
+  { value: "Push-Up", label: "Push-ups" },
+  { value: "Pull-Up", label: "Pull-ups" },
+  { value: "Squat", label: "Squats" },
+  { value: "Sit-Up", label: "Sit-ups" },
 ];
 
 const POLL_INTERVAL_MS = 300;
@@ -181,7 +181,7 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
 
         <section className="card cam-tracker">
           <div className="cam-field">
-            <label className="cam-label" htmlFor="cam-exercise">Select Target Movement</label>
+            <label className="cam-label" htmlFor="cam-exercise">Exercise</label>
             <select
               id="cam-exercise"
               className="cam-select"
@@ -202,7 +202,7 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
             <div className="cam-counter-number">{repCount}</div>
           </div>
 
-          <p className="cam-label" aria-live="polite">
+          <p className="cam-tracking-status" aria-live="polite">
             {tracking ? PHASE_LABELS[phase] ?? "Tracking" : "No body detected. Start the camera and step into view"}
           </p>
 
@@ -220,37 +220,23 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
 
           {recordingError && <p className="camera-error" role="alert">{recordingError}</p>}
 
-          <div className="cam-diet-shortcut" style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #eee' }}>
+          <div className="cam-diet-shortcut">
             <button 
               type="button" 
-              className="cam-btn" 
+              className="cam-btn cam-btn--recovery"
               onClick={() => onNavigate?.('AI Dieting')}
-              style={{
-                width: '100%',
-                backgroundColor: '#27ae60',
-                color: 'white',
-                border: 'none',
-                padding: '0.6rem',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
             >
-              <span>🥗 Fuel Your Recovery (AI Diet)</span>
+              Fuel your recovery · AI Dieting
             </button>
           </div>
 
           <div className="cam-history">
             <div className="cam-history-head">
-              <span className="cam-label">📜 Session History Results</span>
+              <span className="cam-label">Session history</span>
               <span className="cam-history-count">{history.length} {history.length === 1 ? "Set" : "Sets"}</span>
             </div>
             {history.length === 0 ? (
-              <p className="cam-history-empty">No historical entries recorded for this workout track.</p>
+              <p className="cam-history-empty">Your completed sets will appear here.</p>
             ) : (
               <ul className="cam-history-list">
                 {history.map((log) => (
