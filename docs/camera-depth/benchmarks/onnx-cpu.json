@@ -1,0 +1,61 @@
+{
+  "input": "synthetic_blank",
+  "image_shape": [
+    480,
+    640,
+    3
+  ],
+  "python": "3.11.2",
+  "opencv": "4.11.0",
+  "cpu_count": 6,
+  "threads": 6,
+  "models_sha256": {
+    "BOBCAT_POSE_ONNX": "d869413ccfbc0ed027337c773f124d6362436239a83fd0a6e2d43b7a8377792e",
+    "BOBCAT_DEPTH_ONNX": "badcaa28c923da4b0bfaa370ed709acfa00e9f743d295d5443e2149a383413c9"
+  },
+  "limitations": "Inference only; excludes network/display. Repeated image does not validate live joint jitter or exercise accuracy.",
+  "runtimes": {
+    "opencv": {
+      "samples": [
+        {
+          "total_ms": 1796.4090200839564,
+          "pose": 21.071997936815023,
+          "depth": 1775.3198749851435
+        },
+        {
+          "total_ms": 1740.9003260545433,
+          "pose": 20.788533031009138,
+          "depth": 1720.0894600246102
+        },
+        {
+          "total_ms": 1724.800226977095,
+          "pose": 26.98006492573768,
+          "depth": 1697.7972610620782
+        }
+      ],
+      "median_ms": 1740.9003260545433,
+      "p95_ms": 1790.858150681015
+    },
+    "onnxruntime": {
+      "samples": [
+        {
+          "total_ms": 688.8244369765744,
+          "pose": 18.309458042494953,
+          "depth": 660.6904480140656
+        },
+        {
+          "total_ms": 661.2508519319817,
+          "pose": 20.15475300140679,
+          "depth": 641.0659659886733
+        },
+        {
+          "total_ms": 662.7892800606787,
+          "pose": 17.90092303417623,
+          "depth": 644.8628279613331
+        }
+      ],
+      "median_ms": 662.7892800606787,
+      "p95_ms": 686.2209212849848
+    }
+  }
+}

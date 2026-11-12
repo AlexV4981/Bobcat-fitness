@@ -1,0 +1,1267 @@
+{
+  "schema": "graphify.runtime-flow.v1",
+  "graph_type": "implementation_and_quality_gate_dependency_graph",
+  "title": "Bobcat Fitness — Webcam Accurate Depth Tracking",
+  "source": {
+    "repository": "AlexV4981/Bobcat-fitness",
+    "branch": "AV-TFCRT-68-Webcam-Accurate-Depth-Tracking",
+    "commit": "81e259ae5ffde69eba0a894d98911e9ef3f2219e",
+    "url": "https://github.com/AlexV4981/Bobcat-fitness/tree/AV-TFCRT-68-Webcam-Accurate-Depth-Tracking",
+    "snapshot": "2026-11-12",
+    "review_mode": "read_only",
+    "verified_by": "source_and_test_inspection; no tests executed and no live device validation"
+  },
+  "scope": "Live camera upload, pose/depth inference, stabilization, session calibration, overlay, rep recording, APIs and tests. Unrelated diet, scheduling and dashboard features excluded.",
+  "entrypoints": [
+    "ui",
+    "mjpeg",
+    "calibration_api"
+  ],
+  "lanes": [
+    {
+      "id": "frontend",
+      "label": "React browser and camera"
+    },
+    {
+      "id": "backend",
+      "label": "FastAPI camera + workout services"
+    },
+    {
+      "id": "depth",
+      "label": "Pose, optical depth and quality gates"
+    },
+    {
+      "id": "validation",
+      "label": "Synthetic verification and real-world evidence"
+    }
+  ],
+  "edge_kinds": {
+    "data": "Data or control flows forward",
+    "branch": "Selected alternative implementation",
+    "condition": "Conditional path",
+    "gate": "Quality/validity decision",
+    "depends_on": "Required dependency",
+    "fallback": "Safe missing-data pathway, not equivalent quality",
+    "control": "User/API command",
+    "observation": "Status readout",
+    "lifecycle": "Open/close/reset behavior",
+    "reset": "Discard per-camera transient state",
+    "feedback": "Repeated runtime cycle",
+    "tests": "Synthetic unit-test coverage",
+    "evidence": "Measurement required for accuracy claim",
+    "validates": "Real-device evaluation target"
+  },
+  "nodes": [
+    {
+      "id": "ui",
+      "label": "CameraPage",
+      "lane": "frontend",
+      "kind": "entry",
+      "summary": "Selected exercise, live rep state, manual corrections and completed-set handling.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "frontend/src/Camera/CameraPage.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/Camera/CameraPage.jsx"
+        }
+      ],
+      "details": [
+        "Defaults to Push-Up, polls /reps, sends PUT /exercise, and exposes save/undo/finish controls."
+      ]
+    },
+    {
+      "id": "permission",
+      "label": "Start browser camera",
+      "lane": "frontend",
+      "kind": "action",
+      "summary": "Request browser getUserMedia with user-facing camera and no audio.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "frontend/src/components/WebCam/WebcamConnection.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/components/WebCam/WebcamConnection.jsx"
+        }
+      ],
+      "details": [
+        "Preferred resolution 1280×720; browser permission and secure context required."
+      ],
+      "gate": {
+        "pass": "A video track and first frame are available.",
+        "fail": "Show camera-permission or unsupported-browser error."
+      }
+    },
+    {
+      "id": "capture",
+      "label": "Capture, mirror and JPEG-encode",
+      "lane": "frontend",
+      "kind": "transform",
+      "summary": "Copy webcam image into an offscreen canvas, mirror it, downscale when necessary, and JPEG-encode.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "frontend/src/components/WebCam/WebcamConnection.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/components/WebCam/WebcamConnection.jsx"
+        },
+        {
+          "path": "frontend/src/components/WebCam/WebcamUtils.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/components/WebCam/WebcamUtils.jsx"
+        }
+      ],
+      "details": [
+        "FRAME_INTERVAL_MS=100; MAX_FRAME_WIDTH=960; JPEG_QUALITY=0.8; skip if a frame is in flight or WebSocket buffer exceeds 1,000,000 bytes."
+      ]
+    },
+    {
+      "id": "ws",
+      "label": "WebSocket camera ingress",
+      "lane": "backend",
+      "kind": "transport",
+      "summary": "Receive binary JPEG frames at /api/camera/ws/{camera_id}?exercise=...",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/routes/camera.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/routes/camera.py"
+        }
+      ],
+      "details": [
+        "Validate camera ID, accept the socket, reset camera model/origin, initialize recorder and rep session."
+      ],
+      "gate": {
+        "pass": "Binary JPEG passes size/format validation.",
+        "fail": "Close connection with appropriate WebSocket code."
+      }
+    },
+    {
+      "id": "frame_store",
+      "label": "Per-camera raw frame store",
+      "lane": "backend",
+      "kind": "state",
+      "summary": "Keep latest source JPEG and connection/sequence metadata per camera.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/camera_stream.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/camera_stream.py"
+        }
+      ],
+      "details": [
+        "CameraStreamStore.publish, wait_for_frame, snapshot and producer state."
+      ]
+    },
+    {
+      "id": "mjpeg",
+      "label": "Processed MJPEG consumer",
+      "lane": "backend",
+      "kind": "entry",
+      "summary": "GET /api/camera/{camera_id}/mjpeg waits for uploaded frames and launches processing in a worker thread.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/routes/camera.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/routes/camera.py"
+        }
+      ],
+      "details": [
+        "MJPEG is a pull path: frame processing occurs as the stream is consumed."
+      ]
+    },
+    {
+      "id": "decode",
+      "label": "JPEG decode and frame processing",
+      "lane": "backend",
+      "kind": "transform",
+      "summary": "Decode each received JPEG via cv2.imdecode; return original if decoding fails.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/Webcam_utilities/SkeletonOverlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/SkeletonOverlay.py"
+        }
+      ]
+    },
+    {
+      "id": "light",
+      "label": "Lighting assessment and conditional enhancement",
+      "lane": "depth",
+      "kind": "quality_gate",
+      "summary": "Classify center-frame luminance as good, dim or too_dark; apply mild CLAHE to inference pixels only for dim.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/lighting.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/lighting.py"
+        },
+        {
+          "path": "backend/app/Webcam_utilities/SkeletonOverlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/SkeletonOverlay.py"
+        }
+      ],
+      "details": [
+        "Original preview remains unmodified by illumination enhancement.",
+        "Too-dark frames skip model inference."
+      ],
+      "gate": {
+        "good": "Use RGB as captured.",
+        "dim": "Use luminance-only enhanced RGB for inference; notify user.",
+        "too_dark": "No inference; pause recording/counting."
+      }
+    },
+    {
+      "id": "session",
+      "label": "Camera-isolated pose session",
+      "lane": "depth",
+      "kind": "state",
+      "summary": "PoseTrackingStore lazily creates per-camera model, stabilizer, T-pose calibration and optional intrinsics.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/tracking.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/tracking.py"
+        }
+      ],
+      "details": [
+        "Serializes model access under a lock.",
+        "LRU capacity of four camera sessions; closes evicted models.",
+        "Reset on reconnect/disconnect and recalibrate per camera."
+      ]
+    },
+    {
+      "id": "backend_choice",
+      "label": "Select pose backend",
+      "lane": "depth",
+      "kind": "decision",
+      "summary": "Read BOBCAT_POSE_BACKEND; default mediapipe, optional opencv_onnx.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/onnx_inference.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/onnx_inference.py"
+        },
+        {
+          "path": "backend/app/Webcam_utilities/SkeletonOverlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/SkeletonOverlay.py"
+        }
+      ],
+      "details": [
+        "Model selected when first processed frame constructs the camera session."
+      ],
+      "gate": {
+        "mediapipe": "Use MediaPipe Pose with built-in world estimates.",
+        "opencv_onnx": "Require both ONNX model paths; use OpenCV DNN CPU.",
+        "otherwise": "Raise configuration error."
+      }
+    },
+    {
+      "id": "mediapipe",
+      "label": "MediaPipe pose estimator",
+      "lane": "depth",
+      "kind": "inference",
+      "summary": "Run MediaPipe Pose for 2D landmarks and its own world landmarks.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/Webcam_utilities/SkeletonOverlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/SkeletonOverlay.py"
+        }
+      ],
+      "details": [
+        "model_complexity=1, smooth_landmarks=True, min_detection_confidence=0.5, min_tracking_confidence=0.5."
+      ]
+    },
+    {
+      "id": "onnx_models",
+      "label": "OpenCV ONNX pose + metric depth inference",
+      "lane": "depth",
+      "kind": "inference",
+      "summary": "Run COCO-17 RTMPose SimCC inference and Depth Anything V2 metric-depth ONNX models.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/onnx_inference.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/onnx_inference.py"
+        }
+      ],
+      "details": [
+        "RTMPose input 192×256; Depth Anything V2 input 518×518.",
+        "Map 17 COCO joints into 33 MediaPipe-compatible slots; unspecified joints remain invalid.",
+        "Depth map is resized to source frame dimensions; invalid/nonpositive depth becomes NaN.",
+        "Environment: BOBCAT_POSE_ONNX, BOBCAT_DEPTH_ONNX.",
+        "OpenCV DNN CPU is explicitly configured; actual latency not established."
+      ],
+      "gate": {
+        "pass": "Outputs have exact expected shapes and finite pose values.",
+        "fail": "Raise on missing/incompatible model or output."
+      }
+    },
+    {
+      "id": "intrinsics",
+      "label": "Load camera-specific intrinsics",
+      "lane": "depth",
+      "kind": "dependency",
+      "summary": "Load per-camera calibration JSON through BOBCAT_CAMERA_CALIBRATIONS.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/reconstruction.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/reconstruction.py"
+        },
+        {
+          "path": "backend/app/services/depth/tracking.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/tracking.py"
+        }
+      ],
+      "details": [
+        "Requires width, height, fx, fy, cx, cy and explicit mirrored; optional OpenCV distortion coefficients.",
+        "No intrinsics guessed from T-pose."
+      ],
+      "gate": {
+        "pass": "Camera intrinsics exist and match source-frame resolution.",
+        "fail": "World coordinates missing; metric status intrinsics_required or resolution_mismatch."
+      }
+    },
+    {
+      "id": "sample_depth",
+      "label": "Validate per-joint depth",
+      "lane": "depth",
+      "kind": "quality_gate",
+      "summary": "Sample local 5×5 depth neighborhoods, reject low-validity pixels, depth edges or out-of-range values.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/reconstruction.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/reconstruction.py"
+        }
+      ],
+      "details": [
+        "Use local median; confidence and image bounds must pass per joint."
+      ],
+      "gate": {
+        "pass": "Accept joint z in meters.",
+        "fail": "Leave just that joint missing; do not fabricate depth."
+      }
+    },
+    {
+      "id": "reconstruct",
+      "label": "Metric 3D reconstruction",
+      "lane": "depth",
+      "kind": "transform",
+      "summary": "Undistort/unmirror pixel rays, multiply by sampled optical-axis depth, center world landmarks at midpoint of visible hips.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/reconstruction.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/reconstruction.py"
+        },
+        {
+          "path": "backend/app/services/depth/tracking.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/tracking.py"
+        }
+      ],
+      "details": [
+        "Returns camera-space and hip-relative world landmarks.",
+        "Missing either hip invalidates hip-relative world output.",
+        "Resolution mismatch resets stabilizer and T-pose history."
+      ],
+      "gate": {
+        "pass": "World data available when intrinsics, hips and joint depth are valid.",
+        "fail": "Surface metric tracking status; do not substitute 2D angles."
+      }
+    },
+    {
+      "id": "stabilize",
+      "label": "Validate and stabilize 2D/3D joints",
+      "lane": "depth",
+      "kind": "quality_gate",
+      "summary": "Apply visibility/finite-value gates, timestamp-based One Euro filters and speed-based outlier rejection.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/stability.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/stability.py"
+        },
+        {
+          "path": "backend/app/services/depth/filters.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/filters.py"
+        }
+      ],
+      "details": [
+        "Default warmup is three consecutive accepted observations.",
+        "Maintain independent histories for image and world coordinates.",
+        "Do not recycle rejected raw joints or interpret -1 as missing.",
+        "Expired histories restart acquisition."
+      ],
+      "gate": {
+        "pass": "Forward accepted smoothed landmarks; explicitly missing joints remain None.",
+        "fail": "Hide invalid joints and exclude missing 3D values from count adapter."
+      }
+    },
+    {
+      "id": "tpose",
+      "label": "Session T-pose calibration",
+      "lane": "depth",
+      "kind": "quality_gate",
+      "summary": "Require a stationary, fully visible T-pose before live tracking is considered calibrated.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/calibration.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/calibration.py"
+        }
+      ],
+      "details": [
+        "Hold for at least two seconds AND 15 accepted frames.",
+        "Requires good lighting, visible shoulder-to-ankle joints and >=0.75 visibility.",
+        "Gaps >0.4 seconds or motion restart hold.",
+        "Median estimated world bone lengths become a session-relative reference, not true anatomy."
+      ],
+      "gate": {
+        "pass": "Store session bone-length reference; allow qualified recording and counting.",
+        "fail": "Keep calibration pending and report guidance/progress."
+      }
+    },
+    {
+      "id": "bone_gate",
+      "label": "Post-calibration geometric rejection",
+      "lane": "depth",
+      "kind": "quality_gate",
+      "summary": "Compare current world bone lengths to T-pose reference; hide implausibly long image projections.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/calibration.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/calibration.py"
+        }
+      ],
+      "details": [
+        "World length ratio permitted 0.60–1.50 of reference.",
+        "Image projection has a generous upper bound, no lower bound (allows foreshortening).",
+        "Reject connected invalid joints and associated attached feet."
+      ],
+      "gate": {
+        "pass": "Only acceptable image/world joints proceed.",
+        "fail": "Hide unreliable joints, show tracking uncertainty."
+      }
+    },
+    {
+      "id": "record_gate",
+      "label": "Can record and count?",
+      "lane": "backend",
+      "kind": "decision",
+      "summary": "Only run recording/counting when calibrated and lighting is not too_dark.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/Webcam_utilities/SkeletonOverlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/SkeletonOverlay.py"
+        },
+        {
+          "path": "backend/app/services/depth/stability.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/stability.py"
+        }
+      ],
+      "details": [
+        "Count adapter requires both a usable image point and world point for each joint.",
+        "Invalid world depth never falls back to front-view 2D angles."
+      ],
+      "gate": {
+        "pass": "Forward filtered landmarks to recorder and rep session.",
+        "fail": "Pause rep tracking and discard unfinished recording samples; preserve completed reps/files."
+      }
+    },
+    {
+      "id": "overlay",
+      "label": "Draw stabilized skeleton and vector labels",
+      "lane": "backend",
+      "kind": "transform",
+      "summary": "Render accepted image-space joints onto original JPEG; gray if image valid but 3D depth is invalid.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/Webcam_utilities/SkeletonOverlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/SkeletonOverlay.py"
+        },
+        {
+          "path": "backend/app/Webcam_utilities/WebcamCalibrator.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/WebcamCalibrator.py"
+        }
+      ],
+      "details": [
+        "Mint overlay means numerically usable tracking, not good workout form.",
+        "No fallback to unfiltered pose predictions; no invented missing joints.",
+        "Vector displacement displays are image-scaled, not measured centimeters."
+      ]
+    },
+    {
+      "id": "record",
+      "label": "Buffer filtered frame vectors",
+      "lane": "backend",
+      "kind": "state",
+      "summary": "Store accepted image-coordinate landmark samples for the current exercise session.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/movement_recorder.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/movement_recorder.py"
+        },
+        {
+          "path": "backend/app/Webcam_utilities/SkeletonOverlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/SkeletonOverlay.py"
+        }
+      ],
+      "details": [
+        "Existing schema serializes -1 for missing slots; missing joints within stabilizer are None.",
+        "Recorder movement thresholds use image-space changes."
+      ]
+    },
+    {
+      "id": "counter",
+      "label": "Automatic rep state machine",
+      "lane": "backend",
+      "kind": "compute",
+      "summary": "Feed the exercise-specific 3D angle logic in RepCounter; track rep count, phase and tracking state.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/Webcam_utilities/rep_counter.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/rep_counter.py"
+        },
+        {
+          "path": "backend/app/services/rep_session.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/rep_session.py"
+        },
+        {
+          "path": "backend/app/Webcam_utilities/SkeletonOverlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/SkeletonOverlay.py"
+        }
+      ],
+      "details": [
+        "Only supported exercise names are auto-counted.",
+        "Missing or invalid world angles pause valid counting."
+      ]
+    },
+    {
+      "id": "autosave",
+      "label": "Automatic rep JSON persistence",
+      "lane": "backend",
+      "kind": "action",
+      "summary": "On a completed rep, save the buffered rep and associated metadata to a JSON file.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/Webcam_utilities/SkeletonOverlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/SkeletonOverlay.py"
+        },
+        {
+          "path": "backend/app/services/movement_recorder.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/movement_recorder.py"
+        }
+      ],
+      "details": [
+        "If recorder rejects a rep for insufficient movement, decrement the automatic count."
+      ]
+    },
+    {
+      "id": "manual",
+      "label": "Manual rep/set controls",
+      "lane": "frontend",
+      "kind": "control",
+      "summary": "Count Rep, Undo and Save Completed Set call backend recording endpoints.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "frontend/src/Camera/CameraPage.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/Camera/CameraPage.jsx"
+        },
+        {
+          "path": "frontend/src/components/WebCam/WebcamUtils.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/components/WebCam/WebcamUtils.jsx"
+        },
+        {
+          "path": "backend/app/routes/camera.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/routes/camera.py"
+        }
+      ],
+      "details": [
+        "POST /recording/rep, DELETE /recording/rep, POST /recording/set.",
+        "Backend is updated first; UI state changes on success."
+      ]
+    },
+    {
+      "id": "set_log",
+      "label": "Account workout set log",
+      "lane": "frontend",
+      "kind": "external_persistence",
+      "summary": "After backend set finalization, attempt account workout logging; retain local set state if account write fails.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "frontend/src/Camera/CameraPage.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/Camera/CameraPage.jsx"
+        },
+        {
+          "path": "frontend/src/lib/workoutLog.js",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/lib/workoutLog.js"
+        }
+      ]
+    },
+    {
+      "id": "encode",
+      "label": "Encode processed MJPEG response",
+      "lane": "backend",
+      "kind": "transform",
+      "summary": "Encode skeleton-overlay BGR image to JPEG quality 85 and emit multipart MJPEG frames.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/Webcam_utilities/SkeletonOverlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/Webcam_utilities/SkeletonOverlay.py"
+        },
+        {
+          "path": "backend/app/routes/camera.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/routes/camera.py"
+        }
+      ]
+    },
+    {
+      "id": "preview",
+      "label": "Browser processed video preview",
+      "lane": "frontend",
+      "kind": "output",
+      "summary": "Show original video and, when streaming, the processed MJPEG <img> with overlay.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "frontend/src/components/WebCam/WebcamConnection.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/components/WebCam/WebcamConnection.jsx"
+        },
+        {
+          "path": "frontend/src/components/WebCam/WebcamUtils.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/components/WebCam/WebcamUtils.jsx"
+        }
+      ]
+    },
+    {
+      "id": "calibration_api",
+      "label": "Calibration status and reset APIs",
+      "lane": "backend",
+      "kind": "control",
+      "summary": "GET/POST /api/camera/{camera_id}/calibration reports progress, lighting, metric status and resets that camera.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/routes/camera.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/routes/camera.py"
+        },
+        {
+          "path": "backend/app/services/depth/tracking.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/tracking.py"
+        }
+      ],
+      "details": [
+        "POST resets stabilizer/calibration and vector origins, pauses rep state, discards unfinished samples; it does not erase completed rep counts/files."
+      ]
+    },
+    {
+      "id": "poll_calibration",
+      "label": "Poll calibration and show hints",
+      "lane": "frontend",
+      "kind": "observation",
+      "summary": "While streaming, poll calibration state every ~500 ms and show user guidance/recalibration button.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "frontend/src/components/WebCam/WebcamConnection.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/components/WebCam/WebcamConnection.jsx"
+        },
+        {
+          "path": "frontend/src/components/WebCam/WebcamUtils.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/components/WebCam/WebcamUtils.jsx"
+        }
+      ]
+    },
+    {
+      "id": "poll_reps",
+      "label": "Poll rep status and phases",
+      "lane": "frontend",
+      "kind": "observation",
+      "summary": "Poll /api/camera/{camera_id}/reps, ignore stale exercise responses, update count/phase/tracking UI.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "frontend/src/Camera/CameraPage.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/Camera/CameraPage.jsx"
+        },
+        {
+          "path": "backend/app/routes/camera.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/routes/camera.py"
+        }
+      ]
+    },
+    {
+      "id": "disconnect",
+      "label": "Camera-session cleanup",
+      "lane": "backend",
+      "kind": "lifecycle",
+      "summary": "On last producer disconnect, reset that camera model, temporal history and origin; close browser tracks/socket on stop.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/routes/camera.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/routes/camera.py"
+        },
+        {
+          "path": "backend/app/services/depth/tracking.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/tracking.py"
+        },
+        {
+          "path": "frontend/src/components/WebCam/WebcamConnection.jsx",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/frontend/src/components/WebCam/WebcamConnection.jsx"
+        }
+      ],
+      "details": [
+        "Reset one camera without clearing other cameras."
+      ]
+    },
+    {
+      "id": "eval",
+      "label": "Offline stability/accuracy report",
+      "lane": "validation",
+      "kind": "measurement",
+      "summary": "evaluate_angles calculates valid-frame fraction, stationary jitter p95 and optional frame-aligned reference error p95.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/app/services/depth/evaluation.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/evaluation.py"
+        }
+      ],
+      "details": [
+        "Suggested initial goal: <=3° stationary jitter and >=95% valid-frame coverage.",
+        "Stationary jitter is not proof of accuracy or metric-depth correctness.",
+        "Requires independently measured angles to assess accuracy."
+      ]
+    },
+    {
+      "id": "tests_onnx",
+      "label": "ONNX adapter tests",
+      "lane": "validation",
+      "kind": "test",
+      "summary": "Test shape, normalized inputs, inverse letterboxing, invalid outputs, backend configuration and missing-world behavior.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/tests/test_onnx_inference.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/tests/test_onnx_inference.py"
+        }
+      ]
+    },
+    {
+      "id": "tests_metric",
+      "label": "Metric reconstruction tests",
+      "lane": "validation",
+      "kind": "test",
+      "summary": "Synthetic tests for camera calibration, optical geometry, missing hips, bad depth, per-camera isolation and resolution changes.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/tests/test_depth_reconstruction.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/tests/test_depth_reconstruction.py"
+        }
+      ]
+    },
+    {
+      "id": "tests_filter",
+      "label": "Stability and dropout tests",
+      "lane": "validation",
+      "kind": "test",
+      "summary": "Test warmup, zero crossing, missing joints, outlier rejection, re-acquisition and jitter/coverage.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/tests/test_depth_stability.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/tests/test_depth_stability.py"
+        }
+      ]
+    },
+    {
+      "id": "tests_calibration",
+      "label": "Calibration and lighting tests",
+      "lane": "validation",
+      "kind": "test",
+      "summary": "Test T-pose hold, motion/darkness rejection, sprawl gating and partial-rep preservation.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/tests/test_pose_calibration.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/tests/test_pose_calibration.py"
+        }
+      ]
+    },
+    {
+      "id": "tests_sessions",
+      "label": "Multi-camera tracking tests",
+      "lane": "validation",
+      "kind": "test",
+      "summary": "Test lazy initialization, per-camera histories, reset, LRU cleanup, darkness and recalibration.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/tests/test_depth_tracking.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/tests/test_depth_tracking.py"
+        }
+      ]
+    },
+    {
+      "id": "tests_integration",
+      "label": "Camera, drawing, rep and recorder tests",
+      "lane": "validation",
+      "kind": "test",
+      "summary": "Existing tests exercise frame store, overlay adapter, rep counter and vector behavior.",
+      "status": "implemented",
+      "source": [
+        {
+          "path": "backend/tests/test_camera_stream.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/tests/test_camera_stream.py"
+        },
+        {
+          "path": "backend/tests/test_skeleton_overlay.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/tests/test_skeleton_overlay.py"
+        },
+        {
+          "path": "backend/tests/test_rep_counter.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/tests/test_rep_counter.py"
+        },
+        {
+          "path": "backend/tests/test_landmark_vectors.py",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/tests/test_landmark_vectors.py"
+        }
+      ]
+    },
+    {
+      "id": "field_test",
+      "label": "Real-camera validation",
+      "lane": "validation",
+      "kind": "external_gate",
+      "summary": "Human/device tests with laptop and phone feeds, camera angles, backlight, dark clothing and reference-measured angles.",
+      "status": "reference_only",
+      "source": [
+        {
+          "path": "backend/app/services/depth/README.md",
+          "url": "https://github.com/AlexV4981/Bobcat-fitness/blob/81e259ae5ffde69eba0a894d98911e9ef3f2219e/backend/app/services/depth/README.md"
+        }
+      ],
+      "details": [
+        "Not demonstrated by the cited synthetic tests; check accuracy, latency and operating thresholds on real footage."
+      ],
+      "gate": {
+        "pass": "Measured validity, latency and angle accuracy satisfy project-specific targets.",
+        "fail": "Tune or revise thresholds/vision model based on evidence."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "ui",
+      "target": "permission",
+      "kind": "data"
+    },
+    {
+      "source": "permission",
+      "target": "capture",
+      "kind": "data"
+    },
+    {
+      "source": "capture",
+      "target": "ws",
+      "kind": "data"
+    },
+    {
+      "source": "ws",
+      "target": "frame_store",
+      "kind": "data"
+    },
+    {
+      "source": "frame_store",
+      "target": "mjpeg",
+      "kind": "data"
+    },
+    {
+      "source": "mjpeg",
+      "target": "decode",
+      "kind": "data"
+    },
+    {
+      "source": "decode",
+      "target": "light",
+      "kind": "data"
+    },
+    {
+      "source": "light",
+      "target": "session",
+      "kind": "data"
+    },
+    {
+      "source": "session",
+      "target": "backend_choice",
+      "kind": "data"
+    },
+    {
+      "source": "backend_choice",
+      "target": "mediapipe",
+      "kind": "branch",
+      "condition": "BOBCAT_POSE_BACKEND unset or mediapipe"
+    },
+    {
+      "source": "backend_choice",
+      "target": "onnx_models",
+      "kind": "branch",
+      "condition": "BOBCAT_POSE_BACKEND == opencv_onnx and model files provided"
+    },
+    {
+      "source": "mediapipe",
+      "target": "stabilize",
+      "kind": "data",
+      "label": "MediaPipe 2D + estimated world landmarks"
+    },
+    {
+      "source": "onnx_models",
+      "target": "intrinsics",
+      "kind": "data",
+      "label": "ONNX 2D joints + meter-depth map"
+    },
+    {
+      "source": "intrinsics",
+      "target": "sample_depth",
+      "kind": "depends_on",
+      "condition": "Valid matching intrinsics present"
+    },
+    {
+      "source": "onnx_models",
+      "target": "sample_depth",
+      "kind": "data",
+      "label": "Per-pixel metric-depth map"
+    },
+    {
+      "source": "sample_depth",
+      "target": "reconstruct",
+      "kind": "data",
+      "label": "Filtered depth pixels"
+    },
+    {
+      "source": "intrinsics",
+      "target": "reconstruct",
+      "kind": "data",
+      "label": "Unmirroring and distortion-aware camera rays"
+    },
+    {
+      "source": "onnx_models",
+      "target": "reconstruct",
+      "kind": "data",
+      "label": "COCO-to-MediaPipe-mapped image joints"
+    },
+    {
+      "source": "reconstruct",
+      "target": "stabilize",
+      "kind": "data",
+      "label": "Hip-relative world landmarks; some may be missing"
+    },
+    {
+      "source": "intrinsics",
+      "target": "stabilize",
+      "kind": "fallback",
+      "condition": "Intrinsics unavailable: world joints absent, no 2D replacement"
+    },
+    {
+      "source": "light",
+      "target": "stabilize",
+      "kind": "condition",
+      "condition": "too_dark: skip inference and provide missing joints"
+    },
+    {
+      "source": "stabilize",
+      "target": "tpose",
+      "kind": "data"
+    },
+    {
+      "source": "tpose",
+      "target": "bone_gate",
+      "kind": "condition",
+      "condition": "After a valid session T-pose"
+    },
+    {
+      "source": "tpose",
+      "target": "record_gate",
+      "kind": "gate",
+      "condition": "Calibration progress/ready state"
+    },
+    {
+      "source": "bone_gate",
+      "target": "record_gate",
+      "kind": "data",
+      "label": "Filtered, geometry-checked joints"
+    },
+    {
+      "source": "bone_gate",
+      "target": "overlay",
+      "kind": "data",
+      "label": "Valid image positions and valid/invalid 3D quality"
+    },
+    {
+      "source": "record_gate",
+      "target": "record",
+      "kind": "gate",
+      "condition": "calibrated and not too_dark"
+    },
+    {
+      "source": "record_gate",
+      "target": "counter",
+      "kind": "gate",
+      "condition": "calibrated, not too_dark, world joints usable"
+    },
+    {
+      "source": "record_gate",
+      "target": "overlay",
+      "kind": "data",
+      "label": "Tracking and calibration labels"
+    },
+    {
+      "source": "counter",
+      "target": "autosave",
+      "kind": "condition",
+      "condition": "Rep transition completed"
+    },
+    {
+      "source": "record",
+      "target": "autosave",
+      "kind": "data",
+      "label": "Buffered landmark trajectory"
+    },
+    {
+      "source": "autosave",
+      "target": "record",
+      "kind": "feedback",
+      "label": "Clear/start next buffered rep as recorder defines"
+    },
+    {
+      "source": "overlay",
+      "target": "encode",
+      "kind": "data"
+    },
+    {
+      "source": "encode",
+      "target": "preview",
+      "kind": "data"
+    },
+    {
+      "source": "ui",
+      "target": "manual",
+      "kind": "control"
+    },
+    {
+      "source": "manual",
+      "target": "record",
+      "kind": "control",
+      "label": "Save/undo rep or finish set"
+    },
+    {
+      "source": "manual",
+      "target": "counter",
+      "kind": "control",
+      "label": "Manual count reconciliation"
+    },
+    {
+      "source": "manual",
+      "target": "set_log",
+      "kind": "condition",
+      "condition": "Backend finish-set succeeds"
+    },
+    {
+      "source": "ui",
+      "target": "poll_reps",
+      "kind": "control"
+    },
+    {
+      "source": "counter",
+      "target": "poll_reps",
+      "kind": "observation"
+    },
+    {
+      "source": "preview",
+      "target": "poll_calibration",
+      "kind": "control",
+      "label": "While stream active"
+    },
+    {
+      "source": "tpose",
+      "target": "calibration_api",
+      "kind": "observation"
+    },
+    {
+      "source": "reconstruct",
+      "target": "calibration_api",
+      "kind": "observation",
+      "label": "Metric tracking status"
+    },
+    {
+      "source": "calibration_api",
+      "target": "poll_calibration",
+      "kind": "observation"
+    },
+    {
+      "source": "poll_calibration",
+      "target": "calibration_api",
+      "kind": "control",
+      "label": "User taps Recalibrate T-pose"
+    },
+    {
+      "source": "calibration_api",
+      "target": "tpose",
+      "kind": "reset",
+      "label": "New per-camera reference acquisition"
+    },
+    {
+      "source": "calibration_api",
+      "target": "stabilize",
+      "kind": "reset",
+      "label": "Reset temporal filters"
+    },
+    {
+      "source": "ws",
+      "target": "disconnect",
+      "kind": "lifecycle",
+      "label": "Last producer disconnect"
+    },
+    {
+      "source": "preview",
+      "target": "disconnect",
+      "kind": "lifecycle",
+      "label": "Camera stopped or page unmounted"
+    },
+    {
+      "source": "disconnect",
+      "target": "session",
+      "kind": "reset"
+    },
+    {
+      "source": "tests_onnx",
+      "target": "onnx_models",
+      "kind": "tests"
+    },
+    {
+      "source": "tests_metric",
+      "target": "reconstruct",
+      "kind": "tests"
+    },
+    {
+      "source": "tests_filter",
+      "target": "stabilize",
+      "kind": "tests"
+    },
+    {
+      "source": "tests_calibration",
+      "target": "tpose",
+      "kind": "tests"
+    },
+    {
+      "source": "tests_calibration",
+      "target": "light",
+      "kind": "tests"
+    },
+    {
+      "source": "tests_calibration",
+      "target": "bone_gate",
+      "kind": "tests"
+    },
+    {
+      "source": "tests_sessions",
+      "target": "session",
+      "kind": "tests"
+    },
+    {
+      "source": "tests_integration",
+      "target": "overlay",
+      "kind": "tests"
+    },
+    {
+      "source": "tests_integration",
+      "target": "counter",
+      "kind": "tests"
+    },
+    {
+      "source": "tests_integration",
+      "target": "record",
+      "kind": "tests"
+    },
+    {
+      "source": "eval",
+      "target": "field_test",
+      "kind": "evidence",
+      "label": "Measured stationarity/ground-truth metrics"
+    },
+    {
+      "source": "field_test",
+      "target": "record_gate",
+      "kind": "validates",
+      "label": "Hardware/lighting and latency suitability"
+    },
+    {
+      "source": "field_test",
+      "target": "reconstruct",
+      "kind": "validates",
+      "label": "Actual joint/world accuracy"
+    }
+  ],
+  "traversal": {
+    "main_flow": [
+      "ui",
+      "permission",
+      "capture",
+      "ws",
+      "frame_store",
+      "mjpeg",
+      "decode",
+      "light",
+      "session",
+      "backend_choice",
+      "mediapipe | onnx_models → intrinsics → sample_depth → reconstruct",
+      "stabilize",
+      "tpose",
+      "bone_gate",
+      "record_gate",
+      "overlay",
+      "encode",
+      "preview"
+    ],
+    "side_effects": [
+      "record_gate → record → autosave",
+      "record_gate → counter → autosave",
+      "manual → record/counter → set_log",
+      "calibration_api ↔ poll_calibration",
+      "counter → poll_reps"
+    ],
+    "verification": [
+      "tests_onnx",
+      "tests_metric",
+      "tests_filter",
+      "tests_calibration",
+      "tests_sessions",
+      "tests_integration",
+      "eval",
+      "field_test"
+    ]
+  },
+  "known_constraints": [
+    "MediaPipe is default; OpenCV ONNX is an opt-in alternative, not an automatically active replacement.",
+    "Metric reconstruction requires camera-specific intrinsic calibration at the exact uploaded image resolution; T-pose alone does not supply measured scale.",
+    "RTMPose COCO-17 cannot fill all 33 MediaPipe slots; absent joints remain invalid.",
+    "A stable depth estimate is not necessarily an accurate one. No real-camera angle accuracy or end-to-end latency guarantee is established.",
+    "The live camera path is connected to this layer; unrelated application screens are not automatically affected.",
+    "No GitHub files were changed or pushed."
+  ],
+  "run_tests": {
+    "cwd": "backend",
+    "command": "python -m unittest discover -s tests -v",
+    "execution_status": "not_run_in_this_review"
+  }
+}

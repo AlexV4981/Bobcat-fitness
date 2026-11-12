@@ -9,7 +9,7 @@ from typing import Callable
 
 from app.Webcam_utilities.rep_counter import Landmark
 from .stability import PoseStabilizer, StabilizedPose
-from .calibration import TPoseCalibration
+from .calibration import MAX_SAMPLE_GAP, TPoseCalibration
 from .reconstruction import CameraIntrinsics, load_camera_intrinsics, reconstruct_pose
 
 
@@ -23,6 +23,8 @@ class _Session:
     intrinsics_loaded: bool = False
     metric_status: str | None = None
     camera_joints: int = 0
+    performance: dict = field(default_factory=dict)
+    finished_at: float | None = None
 
 
 def _landmarks(result) -> list[Landmark | None] | None:
@@ -64,6 +66,12 @@ class PoseTrackingStore:
                 ),
                 "lighting": latest.lighting if latest else "unknown",
             }
+            if session:
+                backend = getattr(session.model, 'backend', None)
+                runtime = getattr(session.model, 'runtime', None)
+                status['backend'] = backend if isinstance(backend, str) else type(session.model).__name__
+                status['runtime'] = runtime if isinstance(runtime, str) else None
+                status['performance'] = dict(session.performance)
             if session and session.metric_status is not None:
                 status["metric_tracking"] = {
                     "status": session.metric_status,
@@ -83,6 +91,8 @@ class PoseTrackingStore:
                 session.intrinsics_loaded = False
                 session.metric_status = None
                 session.camera_joints = 0
+                session.performance.clear()
+                session.finished_at = None
         return self.status(camera_id)
 
     def process(self, camera_id: str, rgb_frame, *, lighting: str = "good") -> tuple[object, StabilizedPose]:
@@ -96,6 +106,7 @@ class PoseTrackingStore:
                 self._sessions[camera_id] = _Session(self._factory())
             self._sessions.move_to_end(camera_id)
             session = self._sessions[camera_id]
+            started = time.perf_counter()
             result = (session.model.process(rgb_frame) if lighting != "too_dark" else
                       SimpleNamespace(pose_landmarks=None, pose_world_landmarks=None))
             depth = getattr(result, "depth_meters", None)
@@ -126,5 +137,15 @@ class PoseTrackingStore:
                 message = ("Camera intrinsics required for metric 3D tracking." if session.metric_status == "intrinsics_required"
                            else "Camera resolution changed. Restore the calibrated resolution or recalibrate camera intrinsics.")
                 stable = replace(stable, tracking_message=message)
+            finished = time.perf_counter()
+            session.performance = {
+                'processing_ms': round((finished - started) * 1000, 1),
+                'frame_interval_ms': (round((finished - session.finished_at) * 1000, 1)
+                                      if session.finished_at is not None else None),
+                'inference_ms': dict(getattr(result, 'inference_ms', {})),
+                'calibration_rate_ok': (finished - started) <= MAX_SAMPLE_GAP and (
+                    session.finished_at is None or finished - session.finished_at <= MAX_SAMPLE_GAP),
+            }
+            session.finished_at = finished
             session.latest = stable
             return result, stable

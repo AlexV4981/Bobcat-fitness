@@ -6,6 +6,13 @@ Bobcat Fitness is a web-based fitness tracking application built with:
 * Python + FastAPI for the backend
 * SQLite for local database storage
 
+## Find the camera and ONNX work
+
+Start with the [camera/depth navigation guide](docs/camera-depth/README.md) for
+setup, implementation files, tests, benchmark results and remaining validation.
+The [architecture guide](docs/architecture/README.md) explains the supplied
+`graph.json` snapshot. Existing application modules keep their current locations.
+
 ---
 
 # 1. Clone the Repository in VS Code
@@ -271,6 +278,22 @@ python-multipart
 ---
 
 # 9. Start the Backend
+
+For automatic virtualenv selection and easy switching, run from the repository root:
+
+```bash
+python3 backend/run.py --setup --download-models
+python3 backend/run.py mediapipe
+# Stop with Ctrl+C, then switch:
+python3 backend/run.py onnx
+```
+
+On Windows use `python` if `python3` is unavailable. Setup installs dependencies,
+creates `.env.onnx`, and downloads verified model files. See the
+[ONNX guide](docs/camera-depth/setup.md) for checks and the camera
+intrinsics needed for ONNX 3D tracking and rep counting.
+
+The original manual launch method also works:
 
 Still inside:
 

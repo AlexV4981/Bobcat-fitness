@@ -18,9 +18,40 @@ from app.Webcam_utilities.rep_counter import Landmark
 COCO_TO_MEDIAPIPE = (0, 2, 5, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28)
 
 
+class _RuntimeNet:
+    """Expose the small DNN interface used below with ONNX Runtime execution."""
+
+    def __init__(self, path):
+        import onnxruntime as ort
+
+        options = ort.SessionOptions()
+        threads = int(os.environ.get('BOBCAT_ONNX_THREADS', min(6, os.cpu_count() or 1)))
+        if not 1 <= threads <= 64:
+            raise ValueError('BOBCAT_ONNX_THREADS must be between 1 and 64.')
+        options.intra_op_num_threads = threads
+        options.add_session_config_entry('session.intra_op.allow_spinning', '0')
+        self.session = ort.InferenceSession(str(path), options, providers=['CPUExecutionProvider'])
+        self.input_name = self.session.get_inputs()[0].name
+
+    def setInput(self, tensor):
+        self.tensor = tensor
+
+    def getUnconnectedOutLayersNames(self):
+        return [output.name for output in self.session.get_outputs()]
+
+    def forward(self, names=None):
+        outputs = self.session.run(names, {self.input_name: self.tensor})
+        return outputs if names is not None else outputs[0]
+
+
 def _load_net(path):
     if not Path(path).is_file():
         raise ValueError(f"ONNX model file does not exist: {path}")
+    runtime = os.environ.get('BOBCAT_ONNX_RUNTIME', 'opencv').lower()
+    if runtime == 'onnxruntime':
+        return _RuntimeNet(path)
+    if runtime != 'opencv':
+        raise ValueError('BOBCAT_ONNX_RUNTIME must be opencv or onnxruntime.')
     net = cv2.dnn.readNetFromONNX(str(path))
     net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
     net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
@@ -37,6 +68,8 @@ class OpenCVPoseDepth:
     # Each camera gets its own models, with process and close methods.
 
     def __init__(self, pose_path, depth_path):
+        self.backend = 'opencv_onnx'
+        self.runtime = os.environ.get('BOBCAT_ONNX_RUNTIME', 'opencv').lower()
         self.pose_net = _load_net(pose_path)
         self.depth_net = _load_net(depth_path)
 

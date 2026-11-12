@@ -1,7 +1,7 @@
 # Depth and stability
 
 For the opt-in ONNX inference foundation and its current limitations, see
-[ONNX.md](ONNX.md). Calibrated metric reconstruction is implemented in
+[ONNX setup guide](../../../../docs/camera-depth/setup.md). Calibrated metric reconstruction is implemented in
 [RECONSTRUCTION.md](RECONSTRUCTION.md); the guided silhouette remains a later step.
 
 The live camera path now runs through `PoseTrackingStore` and `PoseStabilizer`

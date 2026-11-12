@@ -30,6 +30,18 @@ class PoseTrackingTests(unittest.TestCase):
         self.store = PoseTrackingStore(factory, max_cameras=2)
         self.frame = SimpleNamespace(shape=(720, 1280, 3))
 
+    def test_status_reports_measured_slow_processing_and_actual_backend(self):
+        with patch('app.services.depth.tracking.time.perf_counter', side_effect=[10, 10.7]):
+            self.store.process('camera', self.frame)
+        self.models[0].backend = 'opencv_onnx'
+        self.models[0].runtime = 'onnxruntime'
+        status = self.store.status('camera')
+        self.assertEqual(status['backend'], 'opencv_onnx')
+        self.assertEqual(status['runtime'], 'onnxruntime')
+        self.assertEqual(status['performance']['processing_ms'], 700)
+        self.assertFalse(status['performance']['calibration_rate_ok'])
+        self.assertIsNone(status['performance']['frame_interval_ms'])
+
     def test_creating_camera_store_does_not_start_pose_models(self):
         # Importing the API creates its store, but unrelated pages and routes
         # must not pay for pose inference until a camera frame is processed.

@@ -68,26 +68,26 @@ def draw_landmark_vectors(
     positions: Mapping[int, Position3D],
     required_indexes: Sequence[int],
     camera_id: str = "default",
+    metric_positions: Mapping[int, Position3D] | None = None,
 ) -> bool:
     #Draws the vector on the landmark
     height, width = frame.shape[:2]
-    vectors = calculate_landmark_vectors(
-        positions,
-        required_indexes,
-        width,
-        height,
-        camera_id=camera_id,
-    )
-    if not vectors:
+    vectors = (calculate_landmark_vectors(
+        positions, required_indexes, width, height, camera_id=camera_id,
+    ) if metric_positions is None else {})
+    labels = ({index: f"({x:.3f},{y:.3f},{z:.3f}) m"
+               for index, (x, y, z) in metric_positions.items()}
+              if metric_positions is not None else
+              {index: format_position_vector(vector) for index, vector in vectors.items()})
+    if not labels:
         return False
 
     font = cv2.FONT_HERSHEY_SIMPLEX
-    for index, vector in vectors.items():
+    for index, label in labels.items():
         point = screen_points.get(index)
         if point is None:
             continue
 
-        label = format_position_vector(vector)
         (text_width, text_height), _ = cv2.getTextSize(
             label,
             font,

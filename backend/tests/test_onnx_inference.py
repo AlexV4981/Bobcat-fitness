@@ -71,6 +71,18 @@ class OnnxInferenceTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.model.process(self.frame)
 
+    def test_onnx_factory_does_not_run_mediapipe(self):
+        factory = Mock(side_effect=AssertionError('MediaPipe inference must not run'))
+        env = {'BOBCAT_POSE_BACKEND': 'opencv_onnx', 'BOBCAT_POSE_ONNX': 'pose.onnx',
+               'BOBCAT_DEPTH_ONNX': 'depth.onnx'}
+        with patch.dict(os.environ, env, clear=True), patch(
+            'app.services.depth.onnx_inference._load_net', side_effect=[self.pose, self.depth]
+        ):
+            model = create_pose_model(factory)
+            result = model.process(self.frame)
+        self.assertEqual(result.depth_meters.shape, self.frame.shape[:2])
+        factory.assert_not_called()
+
     def test_default_and_bad_configuration(self):
         factory = Mock()
         with patch.dict(os.environ, {}, clear=True):

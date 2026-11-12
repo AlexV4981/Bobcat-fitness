@@ -1,0 +1,12 @@
+[
+  {
+    "filename": "rtmpose.onnx",
+    "url": "https://huggingface.co/pzoltowski/rtmpose-s-onnx/resolve/8508e7b1ffb82fe0ce6e11b72ea65b96101f44a2/rtmpose-s_working.onnx",
+    "sha256": "d869413ccfbc0ed027337c773f124d6362436239a83fd0a6e2d43b7a8377792e"
+  },
+  {
+    "filename": "depth-anything-v2-metric.onnx",
+    "url": "https://huggingface.co/77ukhtar/depth-anything-v2-metric-onnx/resolve/a4259a3c45137b6eb32c84fcd95b86cd54c255b9/model.onnx",
+    "sha256": "badcaa28c923da4b0bfaa370ed709acfa00e9f743d295d5443e2149a383413c9"
+  }
+]

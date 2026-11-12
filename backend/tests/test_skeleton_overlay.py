@@ -130,6 +130,32 @@ class SkeletonOverlayTests(unittest.TestCase):
         self.assertEqual(line.call_args_list[3].args[3], UNCERTAIN_COLOR)
         self.assertEqual(line.call_args_list[0].args[1], (80, 40))
 
+    def test_onnx_labels_use_metric_world_points_without_toe_landmarks(self):
+        image = [Landmark(.4, .4, 0)] * 33
+        world = [Landmark(.12, -.23, -.345)] * 33
+        for index in (31, 32):
+            image[index] = world[index] = None
+        stable = StabilizedPose(tuple(image), tuple(world))
+        result = SimpleNamespace(pose_landmarks=SimpleNamespace(landmark=image),
+                                 depth_meters=np.full((100, 200), 2.5))
+        overlay = 'app.Webcam_utilities.SkeletonOverlay'
+        with (
+            patch(f'{overlay}.pose_tracking.process', return_value=(result, stable)),
+            patch(f'{overlay}.movement_recorders.record_frame'),
+            patch(f'{overlay}.count_reps'),
+            patch(f'{overlay}.draw_landmark_vectors', return_value=True) as draw,
+        ):
+            draw_skeleton(np.full((100, 200, 3), 150, np.uint8), 'onnx-test')
+        metric = draw.call_args.kwargs['metric_positions']
+        self.assertEqual(metric[11], (.12, -.23, -.345))
+        self.assertNotIn(31, metric)
+        with patch('app.Webcam_utilities.WebcamCalibrator.cv2.putText') as text:
+            self.assertTrue(draw_landmark_vectors(
+                np.zeros((100, 200, 3), np.uint8), {11: (80, 40)}, {},
+                BODY_LANDMARK_INDEXES, metric_positions={11: metric[11]},
+            ))
+        self.assertEqual(text.call_args.args[1], '(0.120,-0.230,-0.345) m')
+
     def test_rejected_joints_never_fall_back_to_raw_predictions(self):
         raw = [Landmark(.5, .5)] * 33
         raw[15] = Landmark(.99, .99)
