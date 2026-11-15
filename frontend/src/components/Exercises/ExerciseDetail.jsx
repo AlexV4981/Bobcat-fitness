@@ -1,20 +1,21 @@
 /**
  * ExerciseDetail
  * ---------------------------------------------------------------------------
- * Full view of one exercise: the interactive form guide (side/front, mistake
- * variants, overlays, scrubber) plus "How to do it", "Common mistakes",
- * "Muscles worked" and equipment. The steps and mistakes are read straight
- * from the exercise's form data, so they can't drift from the animation.
+ * Full view of one exercise. Exercises with a form animation get the
+ * interactive guide (side/front, mistake variants, overlays, scrubber) and
+ * "Common mistakes", read straight from the form data so they can't drift from
+ * the animation. Other exercises show their photos and the dataset's step-by-
+ * step instructions, and hide the mistakes card.
  *
  * @param {Object} props
- * @param {Object} props.exercise - An entry from exerciseCatalog.EXERCISES.
+ * @param {Object} props.exercise - A full UI exercise (with instructions), from useExercise().
  * @param {() => void} props.onBack - Return to the list.
  */
 
 import { getMistakes, getSteps } from "./ExerciseCatalog.js";
 
 export default function ExerciseDetail({ exercise, onBack }) {
-  const { Guide, name, category, difficulty, equipment, muscles, summary } = exercise;
+  const { Guide, images, name, category, difficulty, equipment, muscles, summary } = exercise;
   const steps = getSteps(exercise);
   const mistakes = getMistakes(exercise);
 
@@ -38,33 +39,49 @@ export default function ExerciseDetail({ exercise, onBack }) {
 
       <div className="ex-detail-grid">
         <section className="card ex-detail-guide">
-          <Guide />
+          {Guide ? (
+            <Guide />
+          ) : images.length > 0 ? (
+            <div className="ex-gallery">
+              {images.map((src, i) => (
+                <img key={src} src={src} alt={`${name}, position ${i + 1}`} loading="lazy" decoding="async" />
+              ))}
+            </div>
+          ) : (
+            <p className="ex-muscle-label">No demonstration available yet.</p>
+          )}
         </section>
 
         <div className="ex-detail-side">
           <section className="card">
             <div className="card-header"><h3>How to do it</h3></div>
-            <ol className="ex-steps">
-              {steps.map((s) => (
-                <li key={s.title}>
-                  <strong>{s.title}</strong>
-                  <span>{s.text}</span>
-                </li>
-              ))}
-            </ol>
+            {steps.length > 0 ? (
+              <ol className="ex-steps">
+                {steps.map((s) => (
+                  <li key={s.title}>
+                    <strong>{s.title}</strong>
+                    <span>{s.text}</span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="ex-muscle-label">No instructions available yet.</p>
+            )}
           </section>
 
-          <section className="card card--tint-peach">
-            <div className="card-header"><h3>Common mistakes</h3></div>
-            <ul className="ex-mistakes">
-              {mistakes.map((m) => (
-                <li key={m.title}>
-                  <strong>{m.title}</strong>
-                  <span>{m.text}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+          {mistakes.length > 0 && (
+            <section className="card card--tint-peach">
+              <div className="card-header"><h3>Common mistakes</h3></div>
+              <ul className="ex-mistakes">
+                {mistakes.map((m) => (
+                  <li key={m.title}>
+                    <strong>{m.title}</strong>
+                    <span>{m.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <section className="card card--tint-green">
             <div className="card-header"><h3>Muscles worked</h3></div>
