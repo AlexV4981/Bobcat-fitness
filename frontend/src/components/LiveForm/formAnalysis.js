@@ -81,8 +81,8 @@ export function drawPose(ctx, result) {
   ctx.lineWidth = Math.max(3,ctx.canvas.width/240);
   for (const [a,b] of CONNECTIONS) {
     if (!points[a] || !points[b]) continue;
-    ctx.strokeStyle = colored.has(`${a},${b}`) && state !== 'uncertain'
-      ? (state === 'good' ? '#39ed88' : '#ff6262') : '#b9c3d0';
+    const segmentState=result.edgeStates?.[`${a},${b}`] ?? (colored.has(`${a},${b}`)?state:'uncertain');
+    ctx.strokeStyle=segmentState==='good'?'#39ed88':segmentState==='issue'?'#ff6262':'#b9c3d0';
     ctx.beginPath(); ctx.moveTo(points[a].x,points[a].y); ctx.lineTo(points[b].x,points[b].y); ctx.stroke();
   }
   for (const point of points) {

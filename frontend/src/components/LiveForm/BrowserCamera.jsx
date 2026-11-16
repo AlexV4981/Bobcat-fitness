@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { FormAnalysis, drawPose, MAX_FRAME_AGE_MS } from './formAnalysis';
 import './liveForm.css';
 import TrackingDebug from './TrackingDebug';
+import useDiagnosticsRecording from './useDiagnosticsRecording';
+import RecordingControls from './RecordingControls';
 
-export default function BrowserCamera({ exercise, onRep, resetToken, debugExpanded=false, onToggleDebug }) {
+export default function BrowserCamera({ exercise, onRep, resetToken, repCount=0, debugExpanded=false, onToggleDebug }) {
   const videoRef = useRef(null), canvasRef = useRef(null), active = useRef(null);
   const exerciseRef = useRef(exercise), onRepRef = useRef(onRep);
   const debugRef=useRef(debugExpanded);
@@ -12,6 +14,7 @@ export default function BrowserCamera({ exercise, onRep, resetToken, debugExpand
   const [running,setRunning] = useState(false), [starting,setStarting] = useState(false);
   const [error,setError] = useState(''), [feedback,setFeedback] = useState({state:'uncertain',message:'Start the camera to check your movement.'});
   const [timing,setTiming] = useState(null);
+  const recording=useDiagnosticsRecording(exercise,resetToken,running);
   useEffect(() => { exerciseRef.current=exercise; onRepRef.current=onRep; }, [exercise,onRep]);
   useEffect(() => {
     contextRef.current=`${exercise}:${resetToken}`;
@@ -22,6 +25,7 @@ export default function BrowserCamera({ exercise, onRep, resetToken, debugExpand
     }
   }, [exercise,resetToken]);
   function publishFeedback(next) {
+    recording.feedback(next,performance.now());
     const context=contextRef.current;
     setFeedback(previous=>previous.state===next.state && previous.message===next.message && previous.context===context
       ? previous : {state:next.state,message:next.message,context});
@@ -69,16 +73,17 @@ export default function BrowserCamera({ exercise, onRep, resetToken, debugExpand
         if (data.type==='ready') {
           clearTimeout(task.startTimer); task.ready=true; task.delegate=data.delegate;
           setStarting(false); setRunning(true);
-          publishFeedback({state:'uncertain',message:'Step back so your full body is visible. Use a level side view for squats.'});
+          publishFeedback({state:'uncertain',message:'Face the camera with your whole body and both feet visible, then stand normally for a moment.'});
           return;
         }
         if (data.type!=='result') return;
         task.busy=false;
         const now=performance.now(), canvas=canvasRef.current, ctx=canvas.getContext('2d');
         const age=now-data.capturedAt, sourceWidth=data.bitmap.width, sourceHeight=data.bitmap.height;
-        const result=task.analysis.analyze(data.landmarks,data.bitmap.width,data.bitmap.height,data.capturedAt,now,exerciseRef.current);
+        const result=task.analysis.analyze(data.landmarks,data.bitmap.width,data.bitmap.height,data.capturedAt,now,exerciseRef.current==='Squat'?'Squat':'Preview');
         const interval=task.lastResult?data.capturedAt-task.lastResult:0;
         task.lastResult=data.capturedAt;
+        let recordedResult=result;
         if (!document.hidden && age<=MAX_FRAME_AGE_MS) {
           canvas.width=data.bitmap.width; canvas.height=data.bitmap.height;
           ctx.save(); ctx.translate(canvas.width,0); ctx.scale(-1,1);
@@ -87,8 +92,10 @@ export default function BrowserCamera({ exercise, onRep, resetToken, debugExpand
           publishFeedback(result);
         } else {
           ctx.clearRect(0,0,canvas.width,canvas.height); task.shown=false; task.analysis.pause();
-          publishFeedback({state:'uncertain',message:'Tracking delayed. Form feedback paused; live preview continues.'});
+          recordedResult={...result,state:'uncertain',message:'Tracking delayed. Form feedback paused; live preview continues.',phase:'waiting',rep:false,points:[]};
+          publishFeedback(recordedResult);
         }
+        recording.frame({capturedAt:data.capturedAt,inferenceMs:data.inferenceMs,interval,delegate:task.delegate,width:sourceWidth,height:sourceHeight,result:recordedResult,landmarks:data.landmarks},now);
         data.bitmap.close();
         task.slowFrames=data.inferenceMs>MAX_FRAME_AGE_MS ? (task.slowFrames ?? 0)+1 : 0;
         if (task.delegate==='GPU' && task.slowFrames>=3) {
@@ -135,9 +142,9 @@ export default function BrowserCamera({ exercise, onRep, resetToken, debugExpand
       <p>Camera processing stays on this device. No calibration needed.</p>
     </div>
     <p className={`live-form-feedback live-form-feedback--${displayedFeedback.state}`} role="status">{displayedFeedback.message}</p>
-    <p className="live-form-legend">Green: checked alignment · Red: alignment issue · Gray: unassessed or uncertain</p>
+    <p className="live-form-legend">Green: inward-knee check passed · Red: possible inward drift · Gray: unassessed or uncertain</p>
     {timing && <p className="live-form-timing">On-device {timing.delegate} · Pose {timing.inference} ms · Frame age {timing.age} ms</p>}
-    {debugExpanded && <TrackingDebug sample={timing} />}
+    {debugExpanded && <><RecordingControls recording={recording} running={running} /><TrackingDebug sample={timing} repCount={repCount} /></>}
     {error && <p className="camera-error" role="alert">{error}</p>}
   </div>;
 }

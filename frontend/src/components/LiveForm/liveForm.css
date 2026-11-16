@@ -16,3 +16,7 @@
 .live-form-debug-scroll { overflow-x:auto; }
 .live-form-debug table { width:100%; border-collapse:collapse; text-align:left; font-variant-numeric:tabular-nums; }
 .live-form-debug th, .live-form-debug td { padding:8px; border-bottom:1px solid var(--border); white-space:nowrap; }
+.live-form-recording { margin:16px; padding:16px; border:1px solid var(--border); border-radius:8px; color:var(--ink); font-size:13px; }
+.live-form-recording-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.live-form-recording p { line-height:1.6; }
+.live-form-recording textarea { width:100%; box-sizing:border-box; padding:12px; font:12px/1.6 monospace; color:var(--ink); background:var(--surface); border:1px solid var(--border); border-radius:6px; resize:vertical; }

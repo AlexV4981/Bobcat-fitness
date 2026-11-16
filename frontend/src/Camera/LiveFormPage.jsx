@@ -23,7 +23,7 @@ export default function LiveFormPage({ history=[], onSaveSet, session, onNavigat
     <div className={`cam-grid${debugExpanded ? " cam-grid--debug" : ""}`}>
       <section className="cam-video" aria-label="Camera and form feedback">
         <div className="cam-video-bar">On-device movement tracking · Preview</div>
-        <BrowserCamera debugExpanded={debugExpanded} onToggleDebug={()=>setDebugExpanded(value=>!value)} resetToken={cameraSession} exercise={exercise} onRep={()=>setReps(n=>n+1)} />
+        <BrowserCamera repCount={reps} debugExpanded={debugExpanded} onToggleDebug={()=>setDebugExpanded(value=>!value)} resetToken={cameraSession} exercise={exercise} onRep={()=>setReps(n=>n+1)} />
       </section>
       <section className="card cam-tracker">
         <div className="cam-field"><label className="cam-label" htmlFor="live-exercise">Exercise</label>
@@ -32,12 +32,12 @@ export default function LiveFormPage({ history=[], onSaveSet, session, onNavigat
           </select>
         </div>
         <p className="cam-tracking-status">{exercise==='Squat'
-          ? 'Use a level side view around hip height, with your whole body visible. Start standing, then squat comfortably. Colors assess a parallel-depth target, not your entire form.'
+          ? 'Face the camera with your whole body and both feet visible. Stand normally for a moment, then squat comfortably. Colors check inward knee drift from your standing path; squat depth and overall form are not assessed.'
           : exercise==='Push-Up'
-          ? 'Place the camera beside you with your whole body visible. This preview checks the shoulder–hip–ankle body line during standard floor push-ups. It does not assess every part of your form.'
+          ? 'Front-facing skeleton preview is available. Push-up form checks and automatic counting are not yet available in this workflow.'
           : 'Skeleton preview is available. Automatic form checks and rep counting for this exercise are not available yet.'}</p>
         <div className="cam-counter"><div className="cam-counter-label">Reps completed</div><div className="cam-counter-number" aria-live="polite">{reps}</div></div>
-        <p className="cam-tracking-status">{exercise==='Squat' ? 'Automatic count requires standing, bending and returning to standing. Standing and descent stay neutral; green checks the depth target. Check the count before saving.' : exercise==='Push-Up' ? 'Automatic count requires a visible extended–bent–extended arm cycle. Check the count before saving.' : 'Use the manual counter for this exercise.'}</p>
+        <p className="cam-tracking-status">{exercise==='Squat' ? 'Automatic count follows standing, bending and returning to standing. Green means the inward-knee check passed; it does not certify squat depth or complete form. Check the count before saving.' : 'Use the manual counter for this exercise.'}</p>
         <div className="cam-actions">
           <button className="cam-btn cam-btn--primary" disabled={saving} onClick={()=>setReps(n=>n+1)}>＋ Manual rep</button>
           <button className="cam-btn cam-btn--ghost" disabled={!reps || saving} onClick={()=>setReps(n=>Math.max(0,n-1))}>－ Undo</button>
