@@ -3,6 +3,7 @@
 import math
 
 import cv2
+import mediapipe as mp
 import numpy as np
 from cv2.typing import MatLike
 
@@ -12,7 +13,6 @@ from app.services.movement_recorder import movement_recorders
 from app.services.rep_session import rep_sessions
 from app.services.depth.tracking import PoseTrackingStore
 from app.services.depth.lighting import prepare_pose_frame
-from app.services.depth.onnx_inference import create_pose_model
 
 
 #main body parts skipping small hand and face points
@@ -50,10 +50,8 @@ SKELETON_COLOR = (80, 230, 180)
 UNCERTAIN_COLOR = (140, 140, 140)
 
 
-def _create_mediapipe_pose():
+def _create_pose():
     """Give each camera its own SDK temporal history, created only when needed."""
-    import mediapipe as mp
-
     return mp.solutions.pose.Pose(
         static_image_mode=False,
         model_complexity=1,
@@ -61,10 +59,6 @@ def _create_mediapipe_pose():
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5,
     )
-
-
-def _create_pose():
-    return create_pose_model(_create_mediapipe_pose)
 
 
 pose_tracking = PoseTrackingStore(_create_pose)
@@ -189,20 +183,12 @@ def draw_skeleton(frame: MatLike, camera_id: str = "default") -> MatLike:
     if not can_record:
         return frame
 
-    # COCO-17 exports have no toe points and no image-space Z. Use validated
-    # hip-relative metric points directly instead of the legacy pixel vectors.
-    metric_options = {}
-    if getattr(result, 'depth_meters', None) is not None:
-        metric_options['metric_positions'] = {
-            index: tuple(stable.world[index][:3]) for index in screen_points
-        }
     calibrated = draw_landmark_vectors(
         frame,
         screen_points,
         positions,
         joint_indexes,
         camera_id=camera_id,
-        **metric_options,
     )
     if not calibrated:
         cv2.putText(

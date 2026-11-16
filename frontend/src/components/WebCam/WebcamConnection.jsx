@@ -211,7 +211,7 @@ function WebcamConnection({ exercise = 'Exercise', debugExpanded = false, onTogg
   return (
     <section className="camera-card" aria-labelledby="camera-title">
       <div className="camera-copy">
-        <h2 id="camera-title">Live form check</h2>
+        <h2 id="camera-title">OpenCV camera bridge</h2>
         <p>
           Start your camera, step back until your full body is visible, and hold
           both arms straight out at shoulder height for two seconds. Face a light
@@ -269,17 +269,6 @@ function WebcamConnection({ exercise = 'Exercise', debugExpanded = false, onTogg
       {isCameraOn && streamState === 'streaming' && calibration && (
         <div className="camera-calibration" role="status">
           <p>{calibration.message}</p>
-          {calibration.performance?.calibration_rate_ok === false && (
-            <p>Processing is too slow for reliable calibration. Tracking and rep counting may remain paused.</p>
-          )}
-          {debugExpanded && calibration.backend && (
-            <p>
-              Backend: {calibration.backend}{calibration.runtime ? ` / ${calibration.runtime}` : ''}
-              {' · '}Processing: {calibration.performance?.processing_ms ?? '—'} ms
-              {' · '}Pose: {Math.round(calibration.performance?.inference_ms?.pose ?? 0)} ms
-              {' · '}Depth: {Math.round(calibration.performance?.inference_ms?.depth ?? 0)} ms
-            </p>
-          )}
           {calibration.calibrated === false && (
             <progress max="1" value={calibration.progress || 0} aria-label="T-pose calibration progress" />
           )}

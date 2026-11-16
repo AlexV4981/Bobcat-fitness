@@ -24,7 +24,6 @@ coverage.xml
 # Private environment files; commit only reviewed templates
 .env*
 !/.env.example
-!/backend/.env.onnx.example
 
 # Local model weights, downloads and measured camera calibration
 *.onnx
@@ -36,7 +35,6 @@ coverage.xml
 /backend/movement_data/
 
 # Generated Graphify output and extraction scratch files
-# Versioned architecture snapshots belong in docs/architecture/.
 /graphify-out/
 .graphify_*.json
 .graphify_*.txt
@@ -72,3 +70,17 @@ bobcat-camera-diagnostics-*.json
 /backend/tests/test_preview_profile.py
 /frontend/src/components/WebCam/LabPreview.jsx
 /frontend/src/components/WebCam/labMjpeg*
+
+#keep retired ONNX work local if it is still present in an existing checkout
+/backend/.env.onnx.example
+/backend/run.py
+/backend/benchmark_onnx.py
+/backend/onnx-models.json
+/backend/app/services/depth/onnx_inference.py
+/backend/app/services/depth/reconstruction.py
+/backend/tests/test_backend_launcher.py
+/backend/tests/test_depth_reconstruction.py
+/backend/tests/test_onnx_inference.py
+/docs/camera-depth/
+/docs/architecture/
+/docs/README.md

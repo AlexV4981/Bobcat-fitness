@@ -6,13 +6,6 @@ Bobcat Fitness is a web-based fitness tracking application built with:
 * Python + FastAPI for the backend
 * SQLite for local database storage
 
-## Find the camera and ONNX work
-
-Start with the [camera/depth navigation guide](docs/camera-depth/README.md) for
-setup, implementation files, tests, benchmark results and remaining validation.
-The [architecture guide](docs/architecture/README.md) explains the supplied
-`graph.json` snapshot. Existing application modules keep their current locations.
-
 ---
 
 # 1. Clone the Repository in VS Code
@@ -278,22 +271,6 @@ python-multipart
 ---
 
 # 9. Start the Backend
-
-For automatic virtualenv selection and easy switching, run from the repository root:
-
-```bash
-python3 backend/run.py --setup --download-models
-python3 backend/run.py mediapipe
-# Stop with Ctrl+C, then switch:
-python3 backend/run.py onnx
-```
-
-On Windows use `python` if `python3` is unavailable. Setup installs dependencies,
-creates `.env.onnx`, and downloads verified model files. See the
-[ONNX guide](docs/camera-depth/setup.md) for checks and the camera
-intrinsics needed for ONNX 3D tracking and rep counting.
-
-The original manual launch method also works:
 
 Still inside:
 
@@ -650,3 +627,24 @@ If the frontend loads and `/api/health` returns:
 ```
 
 the development environment is ready.
+
+
+## Browser camera tracking
+
+From `frontend/`, run `npm ci` and `npm run dev`. The dev/build scripts prepare
+the pinned pose runtime and model automatically; the first preparation needs
+network access. Keep the normal frontend environment configuration for account
+features. Open Camera, select Squat and press Start camera over HTTPS or localhost.
+
+Face the camera with your full body and both feet visible. Standing normally
+briefly establishes the movement reference; no T-pose, printed markers or Python
+tracking server is required. The current front-view check observes inward knee
+movement. Its colors do not certify squat depth, metric distance or complete form.
+Other exercises currently use preview/manual counting in this browser workflow.
+
+Show debug includes a numeric recording with a countdown, saved summary and JSON
+export. Download the report before leaving or refreshing the page. Recordings,
+markers and local experiments must stay out of Git. The pre-existing backend
+camera APIs are retained for compatibility; the browser camera page does not
+send frames to them. Retired ONNX inference, model downloads and calibration
+experiments are not dependencies of this workflow.
