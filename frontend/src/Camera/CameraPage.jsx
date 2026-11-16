@@ -9,6 +9,7 @@ import {
 import "./CameraPage.css";
 
 import { logCompletedSet } from "../lib/workoutLog";
+import { useTrackableExercises } from "../components/Exercises/useExerciseCatalog.js";
 
 /**
  * CameraPage
@@ -35,12 +36,14 @@ import { logCompletedSet } from "../lib/workoutLog";
  *   the application routing view state layer.
  */
 
-// Values become backend folder/file names, e.g. Push-Up_Set1/Push-Up_Rep1.json.
-const EXERCISE_OPTIONS = [
-  { value: "Push-Up", label: "Push-ups" },
-  { value: "Pull-Up", label: "Pull-ups" },
-  { value: "Squat", label: "Squats" },
-  { value: "Sit-Up", label: "Sit-ups" },
+// The picker is built from the exercises table (rows with a tracker_name), so it always matches what
+// the Python rep counter can track. This list is only used if that query fails or returns nothing.
+// `value` is sent to the backend and becomes folder/file names, e.g. Push-Up_Set1/Push-Up_Rep1.json.
+const FALLBACK_EXERCISE_OPTIONS = [
+  { value: "Push-Up", label: "Push-ups 🧱", name: "Push-Up", exerciseId: null },
+  { value: "Pull-Up", label: "Pull-ups 🦾", name: "Pull-Up", exerciseId: null },
+  { value: "Squat", label: "Squats 🦵", name: "Squat", exerciseId: null },
+  { value: "Sit-Up", label: "Sit-ups 🧘", name: "Sit-Up", exerciseId: null },
 ];
 
 const POLL_INTERVAL_MS = 300;
@@ -66,6 +69,10 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
   const [recordingError, setRecordingError] = useState("");
   const [phase, setPhase] = useState("waiting");
   const [tracking, setTracking] = useState(false);
+
+  const { options: dbOptions } = useTrackableExercises();
+  const exerciseOptions = dbOptions.length > 0 ? dbOptions : FALLBACK_EXERCISE_OPTIONS;
+  const selectedOption = exerciseOptions.find((o) => o.value === currentExercise);
 
   //lets the poller ignore a reply that belongs to the previously selected exercise
   const exerciseRef = useRef(currentExercise);
@@ -143,7 +150,12 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
     // Also save the set to the user's account (linked to the plan attempt, if any).
     // A failure here shows a message but doesn't lose the set locally.
     try {
-      await logCompletedSet({ exercise: currentExercise, reps: repCount, session });
+      await logCompletedSet({
+        exercise: selectedOption?.name ?? currentExercise,
+        exerciseId: selectedOption?.exerciseId ?? null,
+        reps: repCount,
+        session,
+      });
     } catch (error) {
       setRecordingError(`Set saved locally, but not to your account: ${error.message}`);
     }
@@ -181,7 +193,7 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
 
         <section className="card cam-tracker">
           <div className="cam-field">
-            <label className="cam-label" htmlFor="cam-exercise">Exercise</label>
+            <label className="cam-label" htmlFor="cam-exercise">Select Target Movement</label>
             <select
               id="cam-exercise"
               className="cam-select"
@@ -191,7 +203,7 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
                 setRepCount(0);
               }}
             >
-              {EXERCISE_OPTIONS.map((o) => (
+              {exerciseOptions.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
@@ -202,7 +214,7 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
             <div className="cam-counter-number">{repCount}</div>
           </div>
 
-          <p className="cam-tracking-status" aria-live="polite">
+          <p className="cam-label" aria-live="polite">
             {tracking ? PHASE_LABELS[phase] ?? "Tracking" : "No body detected. Start the camera and step into view"}
           </p>
 
@@ -220,23 +232,37 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
 
           {recordingError && <p className="camera-error" role="alert">{recordingError}</p>}
 
-          <div className="cam-diet-shortcut">
+          <div className="cam-diet-shortcut" style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #eee' }}>
             <button 
               type="button" 
-              className="cam-btn cam-btn--recovery"
+              className="cam-btn" 
               onClick={() => onNavigate?.('AI Dieting')}
+              style={{
+                width: '100%',
+                backgroundColor: '#27ae60',
+                color: 'white',
+                border: 'none',
+                padding: '0.6rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
             >
-              Fuel your recovery · AI Dieting
+              <span>🥗 Fuel Your Recovery (AI Diet)</span>
             </button>
           </div>
 
           <div className="cam-history">
             <div className="cam-history-head">
-              <span className="cam-label">Session history</span>
+              <span className="cam-label">📜 Session History Results</span>
               <span className="cam-history-count">{history.length} {history.length === 1 ? "Set" : "Sets"}</span>
             </div>
             {history.length === 0 ? (
-              <p className="cam-history-empty">Your completed sets will appear here.</p>
+              <p className="cam-history-empty">No historical entries recorded for this workout track.</p>
             ) : (
               <ul className="cam-history-list">
                 {history.map((log) => (
