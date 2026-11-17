@@ -627,3 +627,27 @@ If the frontend loads and `/api/health` returns:
 ```
 
 the development environment is ready.
+
+
+## Browser camera tracking
+
+See [how browser tracking works](frontend/src/components/LiveForm/README.md) for
+setup, the frame pipeline, stability rules, workout saving and limitations.
+
+From `frontend/`, run `npm ci` and `npm run dev`. The dev/build scripts prepare
+the pinned pose runtime and model automatically; the first preparation needs
+network access. Keep the normal frontend environment configuration for account
+features. Open Camera, select Squat and press Start camera over HTTPS or localhost.
+
+Face the camera with your full body and both feet visible. Standing normally
+briefly establishes the movement reference; no T-pose, printed markers or Python
+tracking server is required. The current front-view check observes inward knee
+movement. Its colors do not certify squat depth, metric distance or complete form.
+Other exercises currently use preview/manual counting in this browser workflow.
+
+Show debug includes a numeric recording with a countdown, saved summary and JSON
+export. Download the report before leaving or refreshing the page. Recordings,
+markers and local experiments must stay out of Git. The pre-existing backend
+camera APIs are retained for compatibility; the browser camera page does not
+send frames to them. Retired ONNX inference, model downloads and calibration
+experiments are not dependencies of this workflow.
