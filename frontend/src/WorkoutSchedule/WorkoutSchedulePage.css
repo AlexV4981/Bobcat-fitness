@@ -614,3 +614,217 @@
   background: #E9E9E5;
   color: #3F403A;
 }
+
+
+
+
+/* ---------- Workout CRUD: options, empty/error states ---------- */
+
+.ws-preset-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ws-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ws-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ws-open-btn {
+  background: var(--ws-hero-bg);
+  color: var(--ws-accent);
+  border: none;
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ws-open-btn:hover {
+  filter: brightness(1.12);
+}
+
+.ws-empty {
+  background: var(--ws-surface);
+  border: 1px dashed var(--ws-row-border);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--ws-muted);
+}
+
+.ws-empty p {
+  margin: 0 0 12px;
+}
+
+.ws-error {
+  color: #b3261e;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.ws-status-badge--completed {
+  background: var(--ws-green);
+  color: #fff;
+}
+
+
+/* ---------- Starter kit ---------- */
+
+.ws-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ws-open-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  filter: none;
+}
+
+.ws-open-btn--ghost {
+  background: transparent;
+  color: var(--ws-hero-bg);
+  border: 1.5px solid var(--ws-hero-bg);
+}
+
+.ws-empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* The plan name is the card's real (keyboard-reachable) button; it looks like plain heading text. */
+.ws-preset-open {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ws-preset-open:focus-visible {
+  outline: 2px solid var(--ws-green);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.ws-link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--ws-green);
+  font: 600 13px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.ws-link-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.ws-link-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ws-starter-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin: 14px 0 8px;
+}
+
+.ws-starter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ws-starter-item {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--ws-border, #ededE9);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.ws-starter-item:hover {
+  border-color: var(--ws-green, #768e5b);
+}
+
+.ws-starter-item.is-selected {
+  border-color: var(--ws-green, #768e5b);
+  background: #f6f9f1;
+}
+
+.ws-starter-item.is-added {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ws-starter-item input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ws-green, #768e5b);
+}
+
+.ws-starter-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--ws-tint-peach, #f6eef0);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.ws-starter-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ws-starter-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ws-ink, #0f100e);
+}
+
+.ws-starter-sub {
+  font-size: 12.5px;
+  color: var(--ws-muted, #55564f);
+}
+
+.ws-starter-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: var(--ws-tint-green, #d0e79d);
+  color: #2e4d10;
+}
