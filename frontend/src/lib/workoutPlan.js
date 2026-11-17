@@ -35,6 +35,13 @@ export function localToday() {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
+export function addDays(dateStr, n) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setDate(d.getDate() + n);
+  const pad = (x) => String(x).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 export function newId(prefix = "ex") {
   const rnd = globalThis.crypto?.randomUUID?.().slice(0, 8) ?? Math.random().toString(36).slice(2, 10);
   return `${prefix}_${rnd}`;
@@ -193,4 +200,62 @@ export function toSchedulePlan(row, today) {
     endDate: row.end_date,
     days,
   };
+}
+
+// ----------------------------- day-by-day editor (workouts without a session) -----------------------------
+// Starter-kit and camera workouts are just a list of days, so they are edited directly
+// on the Workouts tab. (AI-generated workouts are edited on the AI Workout page.)
+
+export function draftFromPlan(plan) {
+  const days = [...plan.days].sort((a, b) => a.date.localeCompare(b.date));
+  return {
+    id: plan.id,
+    name: plan.name,
+    days: days.map((d) => ({
+      date: d.date,
+      label: d.label ?? "",
+      exercises: (d.exercises ?? []).map((e) => ({ ...e })),
+    })),
+  };
+}
+
+// Trim text, drop blank exercises and empty days, sort days by date.
+export function cleanPlanDraft(draft) {
+  return {
+    ...draft,
+    name: (draft.name ?? "").trim(),
+    days: draft.days
+      .map((day) => ({
+        ...day,
+        label: (day.label ?? "").trim() || "Workout",
+        exercises: day.exercises
+          .map((e) => ({
+            ...e,
+            name: (e.name ?? "").trim(),
+            reps: String(e.reps ?? "").trim(),
+            sets: Number(e.sets) || 0,
+            completed: Boolean(e.completed),
+          }))
+          .filter((e) => e.name),
+      }))
+      .filter((day) => day.exercises.length > 0)
+      .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? "")),
+  };
+}
+
+// Returns an error message, or "" when the draft can be saved.
+export function validatePlanDraft(draft) {
+  if (!draft.name) return "Give the workout a name.";
+  if (draft.days.length === 0) return "Add at least one exercise.";
+  const seen = new Set();
+  for (const day of draft.days) {
+    if (!day.date) return "Every day needs a date.";
+    if (seen.has(day.date)) return "Two days have the same date. Give each day its own date.";
+    seen.add(day.date);
+    for (const e of day.exercises) {
+      if (e.sets < 1) return `“${e.name}” needs at least 1 set.`;
+      if (!e.reps) return `“${e.name}” needs a rep count (for example 8-10 or 30 sec).`;
+    }
+  }
+  return "";
 }

@@ -828,3 +828,216 @@
   background: var(--ws-tint-green, #d0e79d);
   color: #2e4d10;
 }
+
+
+/* ---------- Header actions + day-by-day editor ---------- */
+
+.ws-section-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Fixed-height panel: bar on top, scrolling body below. The page never changes height while editing. */
+.ws-editor {
+  display: flex;
+  flex-direction: column;
+  height: min(560px, calc(100vh - 140px));
+  min-height: 380px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ws-editor-bar {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--ws-border);
+}
+
+.ws-editor-bar .ws-exercises-title {
+  margin: 0;
+}
+
+.ws-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ws-editor-error {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 10px 20px;
+  background: #fdecea;
+}
+
+.ws-editor-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ws-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ws-muted);
+}
+
+.ws-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  font: 500 14px/1.3 inherit;
+  font-family: inherit;
+  color: var(--ws-ink);
+  background: #fff;
+  border: 1px solid var(--ws-row-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.ws-input:focus-visible {
+  outline: 2px solid var(--ws-green);
+  outline-offset: 1px;
+}
+
+.ws-input--date { width: auto; flex: 0 0 auto; }
+.ws-input--num  { width: 62px; flex: 0 0 auto; text-align: center; }
+.ws-input--reps { width: 92px; flex: 0 0 auto; }
+
+.ws-editor-day {
+  border: 1px solid var(--ws-border);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fcfcfa;
+  flex: 0 0 auto;
+}
+
+.ws-editor-dayhead {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ws-editor-dayhead > .ws-input:first-child {
+  font-weight: 700;
+}
+
+/* The exercise "box": press anywhere on it that isn't a field and slide it up or down. */
+.ws-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.ws-editor-ex {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  row-gap: 6px;
+  padding: 10px 10px 10px 6px;
+  background: #fff;
+  border: 1px solid var(--ws-row-border);
+  border-radius: 12px;
+  cursor: grab;
+  user-select: none;
+}
+
+.ws-editor-ex .ws-input,
+.ws-editor-ex .exp-input {
+  user-select: text;
+  cursor: text;
+}
+
+.ws-editor-ex.is-dragging {
+  cursor: grabbing;
+  border-color: var(--ws-green);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.ws-grip {
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #9a9b92;
+  cursor: grab;
+  touch-action: none; /* lets touch users drag by the grip without scrolling the panel */
+}
+
+.ws-grip:hover { background: #f3f3ef; color: var(--ws-muted-strong); }
+.ws-grip:focus-visible { outline: 2px solid var(--ws-green); outline-offset: 1px; }
+.ws-editor-ex.is-dragging .ws-grip { cursor: grabbing; }
+
+.ws-ex-line2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ws-times { color: var(--ws-muted); }
+.ws-ex-remove { margin-left: auto; }
+
+.ws-icon-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--ws-row-border);
+  background: #fff;
+  color: var(--ws-muted-strong);
+  font-size: 13px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.ws-icon-btn:hover:not(:disabled) { border-color: var(--ws-green); color: var(--ws-green); }
+.ws-icon-btn--danger:hover:not(:disabled) { border-color: #b3261e; color: #b3261e; }
+.ws-icon-btn:disabled { opacity: 0.35; cursor: default; }
+.ws-icon-btn:focus-visible { outline: 2px solid var(--ws-green); outline-offset: 2px; }
+
+.ws-add-btn {
+  align-self: flex-start;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px dashed var(--ws-grey-line);
+  background: transparent;
+  color: var(--ws-ink);
+  font: 600 13px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.ws-add-btn:hover { border-color: var(--ws-green); background: #f6f9f1; }
+.ws-add-day { padding: 9px 16px; font-size: 14px; }
+
+@media (max-width: 560px) {
+  .ws-editor-dayhead { flex-wrap: wrap; }
+}

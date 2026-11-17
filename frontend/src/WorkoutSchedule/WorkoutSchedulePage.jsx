@@ -13,9 +13,10 @@ import {
 import WorkoutOptionsMenu from "../components/WorkoutCrud/WorkoutOptionsMenu";
 import ConfirmDialog from "../components/WorkoutCrud/ConfirmDialog";
 import StarterKitDialog from "./StarterKitDialog";
-import { createStarterWorkouts, deleteWorkout, listWorkouts, setExerciseCompleted } from "../services/workoutService";
+import PlanEditor from "./PlanEditor";
+import { createStarterWorkouts, deleteWorkout, listWorkouts, setExerciseCompleted, updatePlanDays } from "../services/workoutService";
 import { instantiateStarter, STARTER_PLANS } from "../lib/starterPlans";
-import { daysOf, localToday, toSchedulePlan } from "../lib/workoutPlan";
+import { cleanPlanDraft, daysOf, draftFromPlan, localToday, toSchedulePlan, validatePlanDraft } from "../lib/workoutPlan";
 import "./WorkoutSchedulePage.css";
 
 const CHART_COLORS = {
@@ -200,6 +201,10 @@ export default function WorkoutSchedulePage({
   const [pendingDelete, setPendingDelete] = useState(null); // plan awaiting confirmation
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [editDraft, setEditDraft] = useState(null); // day-by-day edit in progress
+  const [editOriginal, setEditOriginal] = useState("");
+  const [editError, setEditError] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const [starterOpen, setStarterOpen] = useState(false);
   const [addingStarter, setAddingStarter] = useState(false);
   const [starterError, setStarterError] = useState("");
@@ -277,8 +282,53 @@ export default function WorkoutSchedulePage({
   };
 
   // ---------------- Edit (redirect) / Delete ----------------
-  const editPlan = (plan) => onOpenWorkout?.(plan.id, "edit");
+  // AI-generated workouts (they have a session) are edited on the AI Workout page;
+  // everything else (starter kit, camera runs) is edited right here.
+  const beginEdit = (plan) => {
+    const draft = draftFromPlan(plan);
+    setEditDraft(draft);
+    setEditOriginal(JSON.stringify(draft));
+    setEditError("");
+  };
+  const editPlan = (plan) => {
+    if (plan.editable) return onOpenWorkout?.(plan.id, "edit");
+    setSelectedPlanId(plan.id);
+    beginEdit(plan);
+  };
   const openPlan = (plan) => onOpenWorkout?.(plan.id, "view");
+
+  const editDirty = Boolean(editDraft) && JSON.stringify(editDraft) !== editOriginal;
+  const cancelEdit = () => {
+    if (editDirty && !window.confirm("Discard your unsaved changes?")) return;
+    setEditDraft(null);
+    setEditError("");
+  };
+  const leaveDetail = () => {
+    if (editDirty && !window.confirm("Discard your unsaved changes?")) return;
+    setEditDraft(null);
+    setEditError("");
+    setSelectedPlanId(null);
+  };
+
+  const saveEdit = async () => {
+    const cleaned = cleanPlanDraft(editDraft);
+    const problem = validatePlanDraft(cleaned);
+    if (problem) return setEditError(problem);
+    const row = rows.find((r) => r.id === editDraft.id);
+    if (!row) return setEditError("That workout no longer exists.");
+
+    setSavingEdit(true);
+    setEditError("");
+    try {
+      const updated = await updatePlanDays(row, cleaned);
+      setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      setEditDraft(null);
+    } catch (err) {
+      setEditError(err.message || "Couldn't save your changes.");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const askDelete = (plan) => {
     setDeleteError("");
@@ -292,7 +342,10 @@ export default function WorkoutSchedulePage({
     try {
       await deleteWorkout(pendingDelete.id);
       setRows((prev) => prev.filter((r) => r.id !== pendingDelete.id));
-      if (selectedPlanId === pendingDelete.id) setSelectedPlanId(null);
+      if (selectedPlanId === pendingDelete.id) {
+        setSelectedPlanId(null);
+        setEditDraft(null);
+      }
       setPendingDelete(null);
     } catch (err) {
       setDeleteError(err.message || "Couldn't delete the workout.");
@@ -358,7 +411,7 @@ export default function WorkoutSchedulePage({
       {selectedPlanId && activePlan ? (
         /* ==================== DETAIL VIEW (Burnup Chart & Exercises) ==================== */
         <div className="ws-detail-view">
-          <button className="ws-back-btn" onClick={() => setSelectedPlanId(null)}>
+          <button className="ws-back-btn" onClick={leaveDetail}>
             ← Back to Workout Presets Grid
           </button>
 
@@ -370,14 +423,14 @@ export default function WorkoutSchedulePage({
               <h1 className="ws-header-title">{activePlan.name}</h1>
             </div>
             <div className="ws-detail-actions">
-              {activePlan.editable && (
+              {activePlan.editable && !editDraft && (
                 <button type="button" className="ws-open-btn" onClick={() => openPlan(activePlan)}>
                   Open in AI Workout →
                 </button>
               )}
               <WorkoutOptionsMenu
                 label={`Options for ${activePlan.name}`}
-                onEdit={activePlan.editable ? () => editPlan(activePlan) : undefined}
+                onEdit={editDraft ? undefined : () => editPlan(activePlan)}
                 onDelete={() => askDelete(activePlan)}
               />
             </div>
@@ -468,7 +521,18 @@ export default function WorkoutSchedulePage({
             </section>
 
             {/* RIGHT: Exercise Checklist */}
-            <ExercisePanel days={sortedDays} today={today} onToggle={handleToggle} />
+            {editDraft && editDraft.id === activePlan.id ? (
+              <PlanEditor
+                draft={editDraft}
+                onChange={setEditDraft}
+                onSave={saveEdit}
+                onCancel={cancelEdit}
+                saving={savingEdit}
+                error={editError}
+              />
+            ) : (
+              <ExercisePanel days={sortedDays} today={today} onToggle={handleToggle} />
+            )}
           </div>
         </div>
       ) : (
@@ -517,11 +581,16 @@ export default function WorkoutSchedulePage({
                 <h1 className="ws-header-title">My Workouts</h1>
                 <p className="ws-subtitle">Open a workout to see its progress and exercise log, or use ⋯ to edit or delete it.</p>
               </div>
-              {!isGuest && (
-                <button type="button" className="ws-open-btn" onClick={openStarter} disabled={allStartersAdded && !loading}>
-                  {allStartersAdded && !loading ? "Starter kit added" : "+ Starter kit"}
+              <div className="ws-section-actions">
+                <button type="button" className="ws-open-btn" onClick={() => onNavigate?.("ai-workout")}>
+                  + AI workout
                 </button>
-              )}
+                {!isGuest && (
+                  <button type="button" className="ws-open-btn" onClick={openStarter} disabled={allStartersAdded && !loading}>
+                    {allStartersAdded && !loading ? "Starter kit added" : "+ Starter kit"}
+                  </button>
+                )}
+              </div>
             </header>
 
             {actionError && !selectedPlanId && (
@@ -571,7 +640,7 @@ export default function WorkoutSchedulePage({
                         </span>
                         <WorkoutOptionsMenu
                           label={`Options for ${plan.name}`}
-                          onEdit={plan.editable ? () => editPlan(plan) : undefined}
+                          onEdit={() => editPlan(plan)}
                           onDelete={() => askDelete(plan)}
                         />
                       </div>

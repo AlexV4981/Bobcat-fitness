@@ -13,7 +13,8 @@ import { buildPlan, countDays, daysOf } from "../lib/workoutPlan";
  *   getWorkout(id)                    Read   one workout, or null
  *   createWorkout(workout)            Create from an AI Workout working copy
  *   createStarterWorkouts(plans)      Create several ready-made plans at once (starter kit)
- *   updateWorkout(id, workout)        Update the whole workout
+ *   updateWorkout(id, workout)        Update the whole workout (AI Workout page)
+ *   updatePlanDays(row, {name, days}) Update a workout that has no session (starter kit / camera)
  *   setExerciseCompleted(row, id, b)  Update just one exercise's completed flag
  *   deleteWorkout(id)                 Delete (logged sets are kept, unlinked)
  *
@@ -108,6 +109,29 @@ export async function updateWorkout(id, w) {
     .from(TABLE)
     .update(toColumns(w))
     .eq("id", id)
+    .select(COLUMNS)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("That workout no longer exists.");
+  return data;
+}
+
+// Day-by-day edit for workouts without a session. AI workouts must go through updateWorkout,
+// otherwise their editable session and their days would drift apart.
+export async function updatePlanDays(row, { name, days }) {
+  await requireSession("save workouts");
+  if (row.session) throw new Error("This workout is edited on the AI Workout page.");
+  const dates = days.map((d) => d.date).sort();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update({
+      name,
+      start_date: dates[0],
+      end_date: dates[dates.length - 1],
+      plan_snapshot: days,
+      ...progressColumns(days, row),
+    })
+    .eq("id", row.id)
     .select(COLUMNS)
     .maybeSingle();
   if (error) throw error;

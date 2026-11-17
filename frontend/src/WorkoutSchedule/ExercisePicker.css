@@ -1,0 +1,86 @@
+/* The list renders in a portal on <body>, outside .ws-page, so these use plain colours
+   instead of the page's CSS variables. */
+
+.exp { position: relative; width: 100%; min-width: 0; }
+
+.exp-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  font: 500 14px/1.3 system-ui, sans-serif;
+  color: #0f100e;
+  background: #fff;
+  border: 1px solid #dedED8;
+  border-radius: 10px;
+  padding: 8px 34px 8px 10px;
+}
+.exp-input:focus-visible { outline: 2px solid #768e5b; outline-offset: 1px; }
+
+.exp-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #55564f;
+  cursor: pointer;
+}
+.exp-toggle:hover { background: #f3f3ef; }
+
+.exp-list {
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 1100;
+  overflow-y: auto;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e4e4de;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  font-family: system-ui, sans-serif;
+}
+
+.exp-group {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #768e5b;
+}
+
+.exp-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.exp-opt.is-active { background: #f3f3ef; }
+.exp-opt-name { font-size: 14px; font-weight: 600; color: #0f100e; }
+.exp-opt-meta { font-size: 12px; color: #55564f; }
+.exp-opt--custom { border-top: 1px solid #ededE9; border-radius: 0 0 8px 8px; margin-top: 4px; }
+.exp-empty { padding: 12px 10px; font-size: 13px; color: #55564f; }
+
+.exp-opt--more { color: #5b7142; font-size: 13px; font-weight: 600; flex-direction: row; }
+.exp-note { padding: 8px 10px; font-size: 12px; color: #55564f; }
+.exp-empty--error { color: #b3261e; }
+.exp-retry {
+  display: block;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: 1px solid #b3261e;
+  border-radius: 999px;
+  background: #fff;
+  color: #b3261e;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}

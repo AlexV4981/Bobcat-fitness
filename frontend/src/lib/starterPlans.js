@@ -1,4 +1,4 @@
-import { localToday } from "./workoutPlan.js";
+import { addDays, localToday } from "./workoutPlan.js";
 
 /**
  * Starter kit: ready-made plans users can add next to their AI-generated ones.
@@ -65,13 +65,6 @@ export const STARTER_PLANS = [
     ],
   },
 ];
-
-function addDays(dateStr, n) {
-  const d = new Date(`${dateStr}T00:00:00`);
-  d.setDate(d.getDate() + n);
-  const pad = (x) => String(x).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
 
 export function starterCounts(plan) {
   return {
