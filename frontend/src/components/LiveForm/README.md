@@ -72,15 +72,23 @@ visible to recover. Do not force uncertain frames red or reuse old scores.
 
 ## Front-view movement counting
 
-A frontal squat can keep a nearly straight projected knee angle even when the
-hips clearly lower. The counter accepts either its existing knee-angle bend or
-sustained hip drop with projected thigh shortening. The frontal alternative
-requires hip drop of at least 20% of standing projected leg length, thigh length
-at most 85% of standing, and ankle displacement at most 10% of standing leg
-length. Hip drop subtracts vertical ankle movement so moving the whole image
-does not become a squat. The same standing start, confirmed return, dwell time,
-minimum cycle duration and confidence/geometry checks still apply. These are
-movement-cycle heuristics, not squat-depth or form-quality measurements.
+Rep counting learns its own standing hip height and projected limb lengths from
+fresh upright frames, matching the established WebcamProcessing counter. T-pose
+calibration is used for form colors, not to seed the counter's standing reference.
+This prevents a shifted calibration reference from trapping an upright person in
+`need_standing`. After tracking loss, unfinished cycles are discarded and the
+counter learns a fresh standing reference while form calibration stays saved.
+A counter-only torso pause retains its own already-learned standing reference
+while discarding the unfinished cycle; actual tracking loss clears that reference.
+
+The established angular movement rules are retained: confirmed standing at
+160 degrees or more, descent below 145 degrees with hip drop, a sustained bend
+at 125 degrees or less with at least 15% normalized hip drop, then a confirmed
+return. Standing and bent observations require 120 ms, with a minimum 700 ms
+cycle. The experimental hip-drop/thigh-projection alternative is deferred. These
+are projected movement-cycle heuristics, not squat-depth or form-quality grades.
+Counter-only torso failures remain distinct from unreliable leg geometry, so
+reliable visible posture can still be colored while counting pauses.
 
 Live feedback uses short cues such as “Uneven shoulders”, “Leaning sideways”,
 “Keep feet shoulder-width apart” and “Alignment on track”. The legend retains

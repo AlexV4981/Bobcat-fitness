@@ -10,7 +10,7 @@ const SIDES = [[11,13,15,23,25,27], [12,14,16,24,26,28]];
 export class FormAnalysis {
   constructor() { this.calibration=null; this.reset(); }
   setCalibration(reference) { this.calibration=reference; this.reset(); }
-  reset() { this.previous = null; this.candidate = null; this.candidateAt = 0; this.lastAt = null; this.repPhase = 'waiting'; this.repAt = 0; this.trackedSide = null; this.previousBones = null; this.squat=new SquatAnalysis(this.calibration); this.feedback=this.calibration?new CalibratedAlignmentFeedback(this.calibration):null; this.exercise=null; }
+  reset() { this.previous = null; this.candidate = null; this.candidateAt = 0; this.lastAt = null; this.repPhase = 'waiting'; this.repAt = 0; this.trackedSide = null; this.previousBones = null; this.squat=new SquatAnalysis(); this.feedback=this.calibration?new CalibratedAlignmentFeedback(this.calibration):null; this.exercise=null; }
   pause() { this.reset(); }
   analyze(landmarks, width, height, capturedAt, now, exercise = 'Push-Up') {
     if (this.exercise!==exercise) {this.reset();this.exercise=exercise;}
