@@ -2,7 +2,7 @@ export default function CalibrationPrompt({status}) {
   if(status.phase==='countdown')return <div className="live-form-guide">
     <div className="live-form-guide-caption" role="status"><strong className="live-form-countdown">{status.seconds || 'Stand tall'}</strong><span>Get ready · lower your arms · feet about shoulder-width apart</span></div>
   </div>;
-  return <div className="live-form-tpose-prompt" role="status"><strong>T-pose</strong><span>Arms out · feet about shoulder-width apart · hold 2 seconds</span></div>;
+  return null;
 }
 
 export function CalibrationStatus({status}) {

@@ -1,8 +1,8 @@
 # Browser squat alignment feedback
 
 Press Start camera, face the screen and hold both arms out for two seconds.
-There is a small T-pose prompt, with no cutout or body-size matching. Lower your
-arms during the five-second countdown and start at the chime. Upright samples
+T-pose instructions and hold progress are below the video; the top-left preview
+label is removed. There is no cutout or body-size matching. Lower your arms during the five-second countdown and start at the chime. Upright samples
 confirm a comfortable leg stance; body-balance targets remain fixed to T-pose.
 Recalibrate is available manually. Ordinary stance changes do not erase the lock.
 
@@ -59,3 +59,13 @@ are excluded from this feature branch's published change. Real-camera accuracy,
 physical motion-to-display latency and cross-device behavior remain to be
 validated. Direction-specific backward lean, depth, full 3D angles and complete
 exercise-form correctness are not established by these front-view checks.
+
+## Demo behavior when assessment pauses
+
+Gray/white means unassessed, not correct or incorrect form. Very deep projected
+positions can make hip-to-knee geometry unsuitable even while the model reports
+high confidence. Foreshortened or implausible limb geometry, unavailable joints,
+a changed viewpoint, stale results and brief re-confirmation can also pause
+colors. The feedback text distinguishes unavailable joints from unassessable
+projection/geometry. Calibration stays saved; return upright with the full body
+visible to recover. Do not force uncertain frames red or reuse old scores.

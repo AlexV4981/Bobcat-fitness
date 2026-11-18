@@ -37,7 +37,9 @@ export class FormAnalysis {
       const movement=this.squat.analyze(points,landmarks,width,height,capturedAt);
       if(!this.feedback)return movement;
       if(['joint_geometry','joint_jump'].includes(movement.metrics.trackingReason)){
-        this.feedback.pause();return movement;
+        this.feedback.pause();
+        return {...movement,message:'Leg positions are uncertain in this pose. Return to a clear upright stance.',
+          metrics:{...movement.metrics,formTrackingValid:false,feedbackReason:movement.metrics.trackingReason==='joint_geometry'?'leg_geometry_uncertain':'joint_jump_uncertain'}};
       }
       //rep-count framing can pause while confident posture observations remain assessable
       return this.feedback.analyze(points,capturedAt,movement.phase,movement.rep,

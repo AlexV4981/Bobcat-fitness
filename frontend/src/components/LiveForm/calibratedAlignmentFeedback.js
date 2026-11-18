@@ -18,7 +18,11 @@ export class CalibratedAlignmentFeedback {
         metrics:{...metrics,formTrackingValid:false,view:'unconfirmed',formCheck:'calibrated_visible_squat_alignment',depthAssessed:false,feedbackReason:reason}};
     };
     const sample=legAlignment(points),body=visibleBodyAlignment(points);
-    if(!sample || !body)return neutral('Keep both shoulders, hips, knees and ankles visible.','body_alignment_uncertain');
+    if(!body)return neutral('Upper-body alignment is unclear. Face the camera with your shoulders and hips visible.','body_projection_uncertain');
+    if(!sample){
+      const missing=[23,24,25,26,27,28].some(id=>!points[id]);
+      return neutral(missing?'A hip, knee or ankle is not tracked clearly. Keep your legs visible.':'Leg alignment cannot be assessed in this position. Return to a clear upright stance.',missing?'leg_joints_unavailable':'leg_projection_uncertain');
+    }
     const target=this.reference.body;
     //rotation loses front-view information; side-to-side lean and uneven shoulders are scored below
     if(target && (body.shoulderSpan/target.shoulderSpan<.45 || body.shoulderSpan/target.shoulderSpan>1.8

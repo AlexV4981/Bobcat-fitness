@@ -31,5 +31,3 @@
 .live-form-calibration-status strong { font-size:clamp(20px,1.8vw,26px); color:#5d3900; }
 .live-form-calibration-status--locked { background:#dcfce7; border-color:#168044; }
 .live-form-calibration-status--locked strong { color:#14532d; }
-.live-form-tpose-prompt { position:absolute; top:12px; left:12px; display:flex; flex-direction:column; gap:4px; padding:10px 14px; border-radius:8px; color:#fff; background:rgba(16,21,29,.9); pointer-events:none; font-size:14px; }
-.live-form-tpose-prompt strong { font-size:22px; }
