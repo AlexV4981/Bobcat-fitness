@@ -54,7 +54,7 @@ network access; runtime/model assets are checksum-verified/prepared by the
 existing dev/build hooks and stay out of Git. Camera access requires localhost
 or HTTPS. Account set saving uses the existing connected application services.
 
-Diagnostic controls, exports, test fixtures, recordings and experimental files
+Captured diagnostic exports, test fixtures, recordings and experimental files
 are excluded from this feature branch's published change. Real-camera accuracy,
 physical motion-to-display latency and cross-device behavior remain to be
 validated. Direction-specific backward lean, depth, full 3D angles and complete
@@ -139,3 +139,24 @@ start or complete a rep. Severe, persistent, missing or jumped geometry resets
 the cycle. A rep still requires reliable recovery and the normal standing return.
 Standing reference refresh can account for scale changes without requiring the
 old ankle anchor, so a step before starting does not freeze an outdated reference.
+
+## Recording diagnostics for a teammate
+
+Open Tracking diagnostics below the squat preview. Start the camera, complete
+T-pose calibration and wait for the chime. Press Record 60 seconds, wait for the
+five-second recording countdown, then perform the test sequence. Press Stop
+recording after the last movement, or let the recording finish automatically.
+Download diagnostics saves a JSON file; send that file manually to the teammate
+investigating the issue. Copy saved summary provides a shorter text overview.
+
+The panel is available in development and production builds. It records numeric
+image-plane landmarks, confidence, calibration/counter references, per-leg
+phases and blocking reasons, timing and delivered rep events. No video or audio
+is recorded or uploaded. The saved report freezes at completion, so approaching
+the screen does not overwrite it. Live counting continues after recording stops.
+Download before refreshing or leaving; starting another recording replaces it.
+Camera stop, recalibration or exercise/set changes end an unfinished recording.
+
+Memory is bounded to 60 seconds, 2400 frames and limited feedback/reference
+snapshots. The report names the counting algorithm and revision for comparison.
+Raw recordings, test fixtures and private findings remain excluded from Git.

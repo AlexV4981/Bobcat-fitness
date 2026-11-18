@@ -5,6 +5,9 @@ import CalibrationPrompt, { CalibrationStatus } from './CalibrationPrompt';
 import { TPoseCalibration } from './tPoseCalibration';
 import { createStartChime } from './startChime';
 import { visible, unknown } from './poseGeometry';
+import useDiagnosticsRecording from './useDiagnosticsRecording';
+import RecordingControls from './RecordingControls';
+import TrackingDebug from './TrackingDebug';
 
 export default function BrowserCamera({ exercise, onRep, resetToken }) {
   const videoRef = useRef(null), canvasRef = useRef(null), active = useRef(null);
@@ -14,6 +17,10 @@ export default function BrowserCamera({ exercise, onRep, resetToken }) {
   const [error,setError] = useState(''), [feedback,setFeedback] = useState({state:'uncertain',message:'Start the camera to check your movement.'});
   const [calibration,setCalibration]=useState({phase:'off',progress:0,seconds:null,message:''});
   const [soundNotice,setSoundNotice]=useState('');
+  const recording=useDiagnosticsRecording(exercise,resetToken,running);
+  const diagnosticsRef=useRef(recording);diagnosticsRef.current=recording;
+  const [counterSample,setCounterSample]=useState(null),[diagnosticsOpen,setDiagnosticsOpen]=useState(false);
+  const diagnosticsOpenRef=useRef(false);diagnosticsOpenRef.current=diagnosticsOpen;
   useEffect(() => { exerciseRef.current=exercise; onRepRef.current=onRep; }, [exercise,onRep]);
   useEffect(() => {
     contextRef.current=`${exercise}:${resetToken}`;
@@ -34,6 +41,7 @@ export default function BrowserCamera({ exercise, onRep, resetToken }) {
   function recalibrate() {
     const task=active.current;
     if(!task)return;
+    diagnosticsRef.current.finish('recalibrated');
     task.calibration.reset();task.analysis.setCalibration(null);task.shown=false;
     showCalibration(task.calibration.status());setSoundNotice('');task.chime.resume?.();
     const canvas=canvasRef.current;canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
@@ -94,10 +102,10 @@ export default function BrowserCamera({ exercise, onRep, resetToken }) {
         task.busy=false;
         const now=performance.now(), canvas=canvasRef.current, ctx=canvas.getContext('2d');
         const age=now-data.capturedAt, sourceWidth=data.bitmap.width, sourceHeight=data.bitmap.height;
-        let result;
+        let result,calibrationSnapshot;
         if(exerciseRef.current==='Squat'){
           const status=task.calibration.update(data.landmarks,sourceWidth,sourceHeight,data.capturedAt,now);
-          showCalibration(status);
+          showCalibration(status);calibrationSnapshot=status;
           if(status.justStarted){
             task.analysis.setCalibration(status.reference);
             if(!task.chime.play())setSoundNotice('Start now. Sound is unavailable or muted; follow the visual cue.');
@@ -110,6 +118,18 @@ export default function BrowserCamera({ exercise, onRep, resetToken }) {
             result=unknown(status.message,points,{calibrationPhase:status.phase});
           }
         } else result=task.analysis.analyze(data.landmarks,sourceWidth,sourceHeight,data.capturedAt,now,'Preview');
+        const previousResult=task.lastResult;
+        result={...result,metrics:{...result.metrics,calibrationPhase:calibrationSnapshot?.phase,
+          calibrationReason:calibrationSnapshot?.reason,calibrationLocked:calibrationSnapshot?.phase==='active',
+          repCandidate:result.rep===true,counterDisplayEligible:!document.hidden && age<=MAX_FRAME_AGE_MS}};
+        diagnosticsRef.current.frame({result:{...result,rep:result.rep && result.metrics.counterDisplayEligible},landmarks:data.landmarks,capturedAt:data.capturedAt,
+          width:sourceWidth,height:sourceHeight,inferenceMs:data.inferenceMs,interval:previousResult?data.capturedAt-previousResult:null,
+          delegate:task.delegate,calibrationReference:calibrationSnapshot?.reference,
+          counterReferences:Object.fromEntries(Object.entries(task.analysis.squat.legs).map(([side,leg])=>[side,leg.reference]))},now);
+        diagnosticsRef.current.feedback(result,now);
+        if(diagnosticsOpenRef.current && now-(task.lastDiagnosticAt??0)>=250){
+          task.lastDiagnosticAt=now;setCounterSample({metrics:result.metrics});
+        }
         task.lastResult=data.capturedAt;
         if (!document.hidden && age<=MAX_FRAME_AGE_MS) {
           canvas.width=data.bitmap.width; canvas.height=data.bitmap.height;
@@ -168,6 +188,11 @@ export default function BrowserCamera({ exercise, onRep, resetToken }) {
     <p className={`live-form-feedback live-form-feedback--${displayedFeedback.state}`} role="status">{displayedFeedback.message}</p>
     {soundNotice && <p className="live-form-sound-note" role="status">{soundNotice}</p>}
     <p className="live-form-legend"><span className="live-form-color-scale" aria-hidden="true" /> Green → yellow → red → deeper red: increasing visible deviation. Body posture affects all bones; knee changes affect that leg. Gray: tracking uncertain. Depth and arm technique are not graded.</p>
+    {exercise==='Squat' && <details onToggle={event=>setDiagnosticsOpen(event.currentTarget.open)}>
+      <summary>Tracking diagnostics</summary>
+      <TrackingDebug sample={counterSample} />
+      <RecordingControls recording={recording} running={running} ready={calibration.phase==='active'} />
+    </details>}
     {error && <p className="camera-error" role="alert">{error}</p>}
   </div>;
 }
