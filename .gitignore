@@ -1,29 +1,86 @@
-# Frontend
-frontend/node_modules/
-frontend/dist/
+# JavaScript dependencies and generated builds at any project level
+node_modules/
+dist/
 
-# Python
-backend/.venv/
+# Python environments, bytecode and tool caches
+.venv/
+venv/
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
 
-# Database
+# Local databases
 *.db
+*.db-journal
+*.db-shm
+*.db-wal
 
-# Environment files
+# Private environment files; commit only reviewed templates
 .env*
-frontend/.env*
-backend/.env*
+!/.env.example
 
-# IDE
+# Local model weights, downloads and measured camera calibration
+*.onnx
+*.onnx.data
+/backend/models/
+/backend/camera-calibrations*.json
+
+# Generated per-set/per-rep movement recordings
+/backend/movement_data/
+
+# Generated Graphify output and extraction scratch files
+/graphify-out/
+.graphify_*.json
+.graphify_*.txt
+
+# Local logs, IDE and operating-system files
+*.log
 .vscode/
 .idea/
-
-# OS
 .DS_Store
 Thumbs.db
-# Generated per-set/per-rep movement recordings stay local to this backend.
-backend/movement_data/
 
-# Generated Graphify output
-graphify-out/
+#keep local camera experiments and diagnostic exports out of commits
+private_test_data/
+[Ll]ab/
+[Ll]abs/
+[Mm]arker/
+[Mm]arkers/
+[Dd]epth_[Ll]ab/
+[Dd]epth-[Ll]ab/
+[Ll]ab-results/
+[Ll]ab_results/
+[Dd]epth-lab-results/
+[Dd]epth_lab_results/
+*findings*.md
+*Findings*.md
+*.zip
+bobcat-camera-diagnostics-*.json
+/backend/app/services/depth/lab_telemetry.py
+/backend/app/services/depth/live_onnx.py
+/backend/app/services/depth/preview.py
+/backend/tests/test_depth_lab.py
+/backend/tests/test_live_onnx.py
+/backend/tests/test_preview_profile.py
+/frontend/src/components/WebCam/LabPreview.jsx
+/frontend/src/components/WebCam/labMjpeg*
+
+#keep retired ONNX work local if it is still present in an existing checkout
+/backend/.env.onnx.example
+/backend/run.py
+/backend/benchmark_onnx.py
+/backend/onnx-models.json
+/backend/app/services/depth/onnx_inference.py
+/backend/app/services/depth/reconstruction.py
+/backend/tests/test_backend_launcher.py
+/backend/tests/test_depth_reconstruction.py
+/backend/tests/test_onnx_inference.py
+/docs/camera-depth/
+/docs/architecture/
+/docs/README.md
