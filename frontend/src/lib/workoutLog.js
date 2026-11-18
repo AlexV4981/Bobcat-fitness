@@ -30,11 +30,12 @@ async function currentUserId() {
 /**
  * Saves one completed set.
  * @param {Object} args
- * @param {string} args.exercise   e.g. "Push-Up"
+ * @param {string} args.exercise   display name saved with the set, e.g. "Push-Up"
+ * @param {string|null} [args.exerciseId]  public.exercises.id; links the set to the catalog (null = unknown)
  * @param {number} args.reps       reps counted in the set
  * @param {{runId: string, planExerciseId: string, targetReps?: number}} [args.session]
  */
-export async function logCompletedSet({ exercise, reps, session }) {
+export async function logCompletedSet({ exercise, exerciseId = null, reps, session }) {
   const userId = await currentUserId();
   const runId = session?.runId ?? null;
   const planExerciseId = session?.planExerciseId ?? null;
@@ -57,6 +58,7 @@ export async function logCompletedSet({ exercise, reps, session }) {
     run_id: runId,
     plan_exercise_id: planExerciseId,
     exercise,
+    exercise_id: exerciseId,
     set_number: setNumber,
     reps,
     target_reps: session?.targetReps ?? null,

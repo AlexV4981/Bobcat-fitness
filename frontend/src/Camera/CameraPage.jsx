@@ -5,10 +5,10 @@ import "./CameraPage.css";
 
 //keep the workout layout while the camera worker handles pose tracking in the browser
 const EXERCISE_OPTIONS = [
-  { value: "Push-Up", label: "Push-ups 🧱" },
-  { value: "Pull-Up", label: "Pull-ups 🦾" },
-  { value: "Squat", label: "Squats 🦵" },
-  { value: "Sit-Up", label: "Sit-ups 🧘" },
+  { value: "Push-Up", label: "Push-ups" },
+  { value: "Pull-Up", label: "Pull-ups" },
+  { value: "Squat", label: "Squats" },
+  { value: "Sit-Up", label: "Sit-ups" },
 ];
 
 export default function CameraPage({ history = [], onSaveSet, session, onNavigate }) {
