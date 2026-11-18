@@ -1,17 +1,13 @@
 import json
 import os
-from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
-from google import genai
-from google.genai import types
 from pydantic import BaseModel
 
 # backend/app/diet.py -> backend/.env.local
-# load_dotenv() does not override variables already set in the environment,
-# so values injected by Docker's env_file take priority.
+# Preserve values already supplied by the environment (including Docker).
 load_dotenv(Path(__file__).resolve().parent.parent / ".env.local")
 
 router = APIRouter()
@@ -57,11 +53,20 @@ class DietResponse(BaseModel):
 
 @router.post("/api/ai-diet", response_model=DietResponse)
 async def generate_diet_recommendations(data: DietRequest):
-    try:
-        client = get_client()
-    except RuntimeError as e:
-        print("Gemini config error:", e)
-        raise HTTPException(status_code=500, detail="AI service is not configured.")
+    api_key = (
+        os.getenv("DIETING_KEY", "").strip()
+        or os.getenv("GOOGLE_API_KEY", "").strip()
+        or os.getenv("GEMINI_API_KEY", "").strip()
+    )
+    if not api_key or os.getenv("GEMINI_BYPASS", "").lower() in {"1", "true", "yes"}:
+        return {
+            "ai_response": (
+                "Demo mode: Gemini is temporarily bypassed. "
+                "Your message was received, but no AI nutrition advice was generated. "
+                "You can keep using the manual logs and checklist."
+            ),
+            "demo_mode": True,
+        }
 
     prompt = f"""
     You are an elite AI Sports Nutritionist analyzing a user's fitness profile.
