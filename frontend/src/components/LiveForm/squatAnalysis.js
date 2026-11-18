@@ -3,7 +3,7 @@ import { FrontalSquatFeedback } from './frontalSquatFeedback.js';
 import { SquatLegCycle } from './squatLegCycle.js';
 
 const LEGS={left:[11,23,25,27],right:[12,24,26,28]};
-export const SQUAT_JOINTS=new Set(Object.values(LEGS).flat());
+export const SQUAT_JOINTS=new Set(Object.values(LEGS).flatMap(joints=>joints.slice(1)));
 const PHASE_ORDER=['waiting','ready','descending','ascending','bottom'];
 const FAILURE_ORDER=['joint_jump','joint_geometry','counter_torso_change','counter_torso_geometry','body_framing','joints_missing'];
 

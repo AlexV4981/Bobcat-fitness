@@ -78,17 +78,27 @@ calibration is used for form colors, not to seed the counter's standing referenc
 This prevents a shifted calibration reference from trapping an upright person in
 `need_standing`. After tracking loss, unfinished cycles are discarded and the
 counter learns a fresh standing reference while form calibration stays saved.
-A counter-only torso pause retains its own already-learned standing reference
-while discarding the unfinished cycle; actual tracking loss clears that reference.
+Lower-body tracking loss clears that reference. Shoulder/torso changes alone
+do not reset a usable leg cycle.
 
-The established angular movement rules are retained: confirmed standing at
-160 degrees or more, descent below 145 degrees with hip drop, a sustained bend
-at 125 degrees or less with at least 15% normalized hip drop, then a confirmed
-return. Standing and bent observations require 120 ms, with a minimum 700 ms
-cycle. The experimental hip-drop/thigh-projection alternative is deferred. These
-are projected movement-cycle heuristics, not squat-depth or form-quality grades.
-Counter-only torso failures remain distinct from unreliable leg geometry, so
-reliable visible posture can still be colored while counting pauses.
+The angular movement path remains available: confirmed standing at 160 degrees
+or more, descent below 145 degrees with hip drop, a sustained bend at 125 degrees
+or less with at least 15% relative hip drop, then a confirmed return.
+
+The front-view counting path also accepts sustained, scale-corrected hip-to-ankle
+shortening of at least 20% of standing projected leg length, with thigh length
+at most 85% of standing and ankle displacement at most 10% of standing leg
+length. Hip width compensates uniform image scaling; relative hip-to-ankle height
+rejects whole-image translation. This path needs usable hips for scale and does
+not require the projected knee to bend to 125 degrees. Both paths retain 120 ms
+confirmation, a 700 ms minimum cycle and the independent-leg duplicate guard.
+These are prototype movement heuristics, not metric depth or a full form grade.
+
+Hands can be clasped in front after the calibration countdown. Shoulders, elbows
+and wrists are not required for the lower-body counter; upper-body uncertainty
+still pauses the relevant form feedback. Torso tilt alone cannot satisfy the hip
+and leg movement requirements. Confidence, jumps and implausible lower-body
+geometry still reject unreliable observations.
 
 Live feedback uses short cues such as “Uneven shoulders”, “Leaning sideways”,
 “Keep feet shoulder-width apart” and “Alignment on track”. The legend retains
@@ -98,15 +108,16 @@ the visible-alignment scope and neutral-color explanation.
 
 Each leg owns its own live standing reference, confidence/geometry checks and
 standing-to-bend-to-standing cycle. Losing one leg clears only its partial cycle;
-a usable opposite leg can continue. Global stale frames and full tracking loss
-still require fresh standing acquisition. Counter-only torso pauses discard that
-leg's partial cycle while retaining its own previously learned reference.
+a usable opposite leg can continue. Global stale frames and full lower-body tracking loss
+still require fresh standing acquisition. Shoulder/torso changes no longer reset
+a visible leg cycle.
 
 One coordinator emits a single rep event. After a completion, returns from cycles
 that started before that event are ignored, preventing delayed opposite-leg
 returns from double counting. Partial cycles from different legs are never
 combined. No fixed preferred side or mid-cycle transfer of standing references
-is used. The angular, hip-drop and timing thresholds are unchanged.
+is used. The existing angular path and cycle timing remain; the front-view alternative
+uses the additional projection checks described above.
 
 Both checkers use the same detected frame and validated image-plane points. A
 jump on one leg no longer resets the healthy leg's counter. Unreliable leg
@@ -117,3 +128,14 @@ remain; symmetric logic does not guarantee detection at every body rotation.
 
 The public phase/rep/points/metrics result and camera callback remain unchanged.
 Additional per-leg tracking metrics identify which chain completed a cycle.
+
+## Brief projected-thigh pause
+
+After a sustained bend is already confirmed, a continuous thigh contraction
+between 20% and 25% of the standing projected length can retain that leg's cycle
+for at most 150 ms. This requires a stable shin, small frame-to-frame length
+changes and a stable ankle. These frames remain unassessed for form and cannot
+start or complete a rep. Severe, persistent, missing or jumped geometry resets
+the cycle. A rep still requires reliable recovery and the normal standing return.
+Standing reference refresh can account for scale changes without requiring the
+old ankle anchor, so a step before starting does not freeze an outdated reference.
