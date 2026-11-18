@@ -69,3 +69,19 @@ a changed viewpoint, stale results and brief re-confirmation can also pause
 colors. The feedback text distinguishes unavailable joints from unassessable
 projection/geometry. Calibration stays saved; return upright with the full body
 visible to recover. Do not force uncertain frames red or reuse old scores.
+
+## Front-view movement counting
+
+A frontal squat can keep a nearly straight projected knee angle even when the
+hips clearly lower. The counter accepts either its existing knee-angle bend or
+sustained hip drop with projected thigh shortening. The frontal alternative
+requires hip drop of at least 20% of standing projected leg length, thigh length
+at most 85% of standing, and ankle displacement at most 10% of standing leg
+length. Hip drop subtracts vertical ankle movement so moving the whole image
+does not become a squat. The same standing start, confirmed return, dwell time,
+minimum cycle duration and confidence/geometry checks still apply. These are
+movement-cycle heuristics, not squat-depth or form-quality measurements.
+
+Live feedback uses short cues such as “Uneven shoulders”, “Leaning sideways”,
+“Keep feet shoulder-width apart” and “Alignment on track”. The legend retains
+the visible-alignment scope and neutral-color explanation.

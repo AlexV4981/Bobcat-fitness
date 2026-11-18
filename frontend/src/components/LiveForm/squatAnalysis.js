@@ -11,7 +11,7 @@ export class SquatAnalysis {
   reset() {
     this.frontal=this.calibration?null:new FrontalSquatFeedback();
     this.side=null; this.bones=null; this.reference=null; this.phase='waiting'; this.standSince=null;
-    this.startedAt=null; this.bendSince=null; this.reachedBend=false; this.minKnee=180;
+    this.startedAt=null; this.bendSince=null; this.reachedBend=false; this.minKnee=180; this.maxDrop=0;
   }
   analyze(points, landmarks, width, height, at) {
     const fail=(message,metrics={})=>{this.reset();return unknown(message,points,metrics);};
@@ -31,7 +31,7 @@ export class SquatAnalysis {
     //a bent limb can look shorter in the image; compare with standing lengths instead of the current torso
     if(!this.reference){
       const captured=this.calibration?.standing?.[side[0]===11?'left':'right'];
-      if(captured)this.reference={bones:[...captured.bones],hipY:captured.hipY};
+      if(captured)this.reference={bones:[...captured.bones],hipY:captured.hipY,ankle:{...a}};
     }
     const reference=this.reference;
     const geometryOK=reference
@@ -48,7 +48,13 @@ export class SquatAnalysis {
     this.bones=bones;
     const knee=angle(h,k,a);
     if (!Number.isFinite(knee)) return fail('Knee position is uncertain.');
-    const hipDrop=reference?(h.y-reference.hipY)/(reference.bones[1]+reference.bones[2]):0;
+    const legLength=reference?reference.bones[1]+reference.bones[2]:thigh+shin;
+    //subtract ankle movement so translating the whole image does not look like a squat
+    const hipDrop=reference?(h.y-reference.hipY-(a.y-reference.ankle.y))/legLength:0;
+    //front-view knees can stay nearly straight in 2D while the thigh projects shorter
+    const projectedBend=Boolean(reference && thigh<=reference.bones[1]*.85
+      && distance(a,reference.ankle)<=legLength*.10);
+    const bent=(knee<=COUNT_BEND_ANGLE && hipDrop>=.15) || (projectedBend && hipDrop>=.20);
 
     let rep=false;
     if (knee>=160 && (!reference || hipDrop<=.08)) {
@@ -56,29 +62,31 @@ export class SquatAnalysis {
       if (at-this.standSince>=120) {
         if (this.phase!=='waiting' && this.phase!=='ready') rep=this.reachedBend && at-this.startedAt>=700;
         this.phase='ready'; this.startedAt=null; this.reachedBend=false;
-        this.bendSince=null; this.minKnee=180;
+        this.bendSince=null; this.minKnee=180; this.maxDrop=0;
         //learn the ordinary standing pose automatically and keep it fixed while moving
-        if (!this.reference) this.reference={bones:[...bones],hipY:h.y};
+        if (!this.reference) this.reference={bones:[...bones],hipY:h.y,ankle:{...a}};
         else {
           this.reference.bones=this.reference.bones.map((n,i)=>n*.9+bones[i]*.1);
           this.reference.hipY=this.reference.hipY*.9+h.y*.1;
+          this.reference.ankle={x:this.reference.ankle.x*.9+a.x*.1,y:this.reference.ankle.y*.9+a.y*.1};
         }
       }
     } else {
       this.standSince=null;
-      if (this.phase==='ready' && knee<145 && hipDrop>=.08) {this.phase='descending';this.startedAt=at;}
+      if (this.phase==='ready' && (knee<145 || projectedBend) && hipDrop>=.08) {this.phase='descending';this.startedAt=at;}
       if (this.phase!=='waiting' && this.phase!=='ready') {
         this.minKnee=Math.min(this.minKnee,knee);
-        //count a clear sustained bend and hip drop independently of knee-path feedback
-        if (knee<=COUNT_BEND_ANGLE && hipDrop>=.15) {
+        this.maxDrop=Math.max(this.maxDrop,hipDrop);
+        //either bend signal still needs a sustained low position and a complete return
+        if (bent) {
           this.bendSince ??= at;
           if (at-this.bendSince>=120) this.reachedBend=true;
         } else this.bendSince=null;
-        this.phase=knee>this.minKnee+8?'ascending':knee<=COUNT_BEND_ANGLE?'bottom':'descending';
+        this.phase=knee>this.minKnee+8 || hipDrop<this.maxDrop-.04?'ascending':bent?'bottom':'descending';
       }
     }
     const viewLength=this.reference?.bones[0] ?? torso;
-    const metrics={side:side[0]===11?'left':'right',kneeAngle:knee,hipDrop,trackingValid:true,
+    const metrics={side:side[0]===11?'left':'right',kneeAngle:knee,hipDrop,trackingValid:true,projectedBend,countingBendSignal:bent?(knee<=COUNT_BEND_ANGLE?'knee_angle':'hip_drop_projection'):null,
       countingReason:rep?'completed_cycle':this.phase==='waiting'?'need_standing':this.phase==='ready'?'waiting_for_bend':this.reachedBend?'waiting_for_return':'need_sustained_bend'};
     if(this.calibration)return {...unknown('Movement cycle tracked.',points,metrics),phase:this.phase,rep};
     return this.frontal.analyze(points,at,this.phase,rep,metrics,viewLength);

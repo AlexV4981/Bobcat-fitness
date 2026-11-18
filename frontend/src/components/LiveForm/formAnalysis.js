@@ -18,7 +18,7 @@ export class FormAnalysis {
     if (gap > MAX_FRAME_AGE_MS || gap <= 0) {this.reset();this.exercise=exercise;}
     this.lastAt = capturedAt;
     if (!Number.isFinite(now-capturedAt) || now-capturedAt < 0 || now-capturedAt > MAX_FRAME_AGE_MS) {
-      this.pause(); return unknown('Tracking delayed. Form feedback paused.');
+      this.pause(); return unknown('Tracking delayed · paused');
     }
     const points = landmarks.map(p => visible(p) ? { x:p.x*width,y:p.y*height } : null);
     //hide sudden jumps instead of keeping an old point or guessing a replacement
@@ -32,13 +32,13 @@ export class FormAnalysis {
     //use these raw detections for the next comparison so tracking can recover after a jump
     this.previous = landmarks.map(p => visible(p) ? {x:p.x*width,y:p.y*height} : null);
     const fail = (message) => { this.candidate=null; this.repPhase='waiting'; this.trackedSide=null; this.previousBones=null; this.squat.reset(); this.feedback?.pause(); return unknown(message,points); };
-    if (jumped) return fail('Tracking changed suddenly. Hold the full body in view.');
+    if (jumped) return fail('Tracking changed · keep body visible');
     if (exercise === 'Squat') {
       const movement=this.squat.analyze(points,landmarks,width,height,capturedAt);
       if(!this.feedback)return movement;
       if(['joint_geometry','joint_jump'].includes(movement.metrics.trackingReason)){
         this.feedback.pause();
-        return {...movement,message:'Leg positions are uncertain in this pose. Return to a clear upright stance.',
+        return {...movement,message:'Leg tracking unclear · stand upright',
           metrics:{...movement.metrics,formTrackingValid:false,feedbackReason:movement.metrics.trackingReason==='joint_geometry'?'leg_geometry_uncertain':'joint_jump_uncertain'}};
       }
       //rep-count framing can pause while confident posture observations remain assessable

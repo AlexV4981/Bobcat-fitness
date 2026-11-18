@@ -18,16 +18,16 @@ export class CalibratedAlignmentFeedback {
         metrics:{...metrics,formTrackingValid:false,view:'unconfirmed',formCheck:'calibrated_visible_squat_alignment',depthAssessed:false,feedbackReason:reason}};
     };
     const sample=legAlignment(points),body=visibleBodyAlignment(points);
-    if(!body)return neutral('Upper-body alignment is unclear. Face the camera with your shoulders and hips visible.','body_projection_uncertain');
+    if(!body)return neutral('Show shoulders and hips','body_projection_uncertain');
     if(!sample){
       const missing=[23,24,25,26,27,28].some(id=>!points[id]);
-      return neutral(missing?'A hip, knee or ankle is not tracked clearly. Keep your legs visible.':'Leg alignment cannot be assessed in this position. Return to a clear upright stance.',missing?'leg_joints_unavailable':'leg_projection_uncertain');
+      return neutral(missing?'Keep legs visible':'Alignment unclear · stand upright',missing?'leg_joints_unavailable':'leg_projection_uncertain');
     }
     const target=this.reference.body;
     //rotation loses front-view information; side-to-side lean and uneven shoulders are scored below
     if(target && (body.shoulderSpan/target.shoulderSpan<.45 || body.shoulderSpan/target.shoulderSpan>1.8
       || body.hipSpan/target.hipSpan<.4 || body.hipSpan/target.hipSpan>2))
-      return neutral('Face the camera so the visible alignment checks can run.','front_view_uncertain');
+      return neutral('Face the camera','front_view_uncertain');
     const signed={},raw={};
     for(const leg of LEGS){
       signed[leg.name]=sample.angles[leg.name]-this.reference.angles[leg.name];
@@ -39,7 +39,7 @@ export class CalibratedAlignmentFeedback {
     //convert the projection cue to color-score units; never label this as a joint angle
     raw.torsoProjection=Math.max(0,projection.change-.15)/.25*15;
     const stance=calibratedStanceWidth(points,this.reference,body);
-    if(!stance.assessed)return neutral('Keep your shoulders, hips and feet visible to check stance width.','stance_width_uncertain');
+    if(!stance.assessed)return neutral('Keep full body visible','stance_width_uncertain');
     //a five-percent tracking tolerance prevents tiny spacing jitter from changing the verdict
     raw.stanceWidth=stance.assessed && stance.excess>0?6+stance.excess*45:0;
     const scores=Object.fromEntries(Object.entries(raw).map(([key,error])=>[key,this.score(key,error,at)]));
@@ -59,14 +59,14 @@ export class CalibratedAlignmentFeedback {
     }
     const state=!confirmed?'uncertain':worst<=ALIGNMENT_GREEN_DEGREES?'good':worst>=ALIGNMENT_RED_DEGREES?'issue':'uncertain';
     const dominant=Object.keys(errors).sort((a,b)=>errors[b]-errors[a])[0];
-    const cues={left:signed.left<0?'Left knee moves far outward from its calibrated path.':'Left knee moves inward from its calibrated path.',
-      right:signed.right<0?'Right knee moves far outward from its calibrated path.':'Right knee moves inward from its calibrated path.',
-      torsoLean:'Your torso is leaning sideways from your standing reference.',
-      shoulderTilt:'Your shoulders are uneven compared with your standing reference.',
-      hipTilt:'Your hips are uneven compared with your standing reference.',
-      stanceWidth:'Bring your feet back to about shoulder-width apart for the standard squat.',
-      torsoProjection:'Your upper-body projection changed from your upright reference. Stand tall and face the camera.'};
-    const message=!confirmed?'Checking visible alignment…':worst<=ALIGNMENT_GREEN_DEGREES?'Visible alignment is close to your reference. Depth and arm technique are not assessed.':cues[dominant];
+    const cues={left:signed.left<0?'Left knee too far out':'Left knee moving inward',
+      right:signed.right<0?'Right knee too far out':'Right knee moving inward',
+      torsoLean:'Leaning sideways',
+      shoulderTilt:'Uneven shoulders',
+      hipTilt:'Uneven hips',
+      stanceWidth:'Keep feet shoulder-width apart',
+      torsoProjection:'Stand tall · face camera'};
+    const message=!confirmed?'Checking alignment…':worst<=ALIGNMENT_GREEN_DEGREES?'Alignment on track':cues[dominant];
     return {state,message,points,checkedEdges:EDGES,edgeStates,edgeColors,phase,rep,
       metrics:{...metrics,formTrackingValid:true,view:'front',formCheck:'calibrated_visible_squat_alignment',depthAssessed:false,
         alignmentAngles:sample.angles,calibratedAngles:this.reference.angles,

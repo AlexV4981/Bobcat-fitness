@@ -119,7 +119,7 @@ export default function BrowserCamera({ exercise, onRep, resetToken }) {
           publishFeedback(result);
         } else {
           ctx.clearRect(0,0,canvas.width,canvas.height); task.shown=false; task.analysis.pause();
-          publishFeedback(unknown('Tracking delayed. Form feedback paused; live preview continues.'));
+          publishFeedback(unknown('Tracking delayed · paused'));
         }
         data.bitmap.close();
         task.slowFrames=data.inferenceMs>MAX_FRAME_AGE_MS ? (task.slowFrames ?? 0)+1 : 0;
@@ -139,7 +139,7 @@ export default function BrowserCamera({ exercise, onRep, resetToken }) {
           const c=canvasRef.current; c.getContext('2d').clearRect(0,0,c.width,c.height);
           task.shown=false; task.analysis.pause();
           if(exerciseRef.current==='Squat')showCalibration(task.calibration.invalidate());
-          publishFeedback({state:'uncertain',message:'Tracking uncertain. Feedback paused until fresh frames arrive.'});
+          publishFeedback({state:'uncertain',message:'Tracking unclear · paused'});
         }
         if (!task.ready || task.busy || document.hidden || video.readyState<2 || video.currentTime===task.lastVideoTime || now-task.lastSent<33) return;
         task.busy=true; task.lastVideoTime=video.currentTime; task.lastSent=now;
