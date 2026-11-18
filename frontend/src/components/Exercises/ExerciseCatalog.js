@@ -1,94 +1,59 @@
 /**
- * exerciseCatalog
+ * ExerciseCatalog
  * ---------------------------------------------------------------------------
- * The single source of truth for the Exercises page. The page, its filters, the
- * cards and the detail view are all generated from EXERCISES, so adding an
- * entry here is all it takes for a new exercise to show up.
+ * Helpers that turn a public.exercises row into the shape the Exercises UI
+ * uses, plus the search and "how to / mistakes" helpers. The data itself comes
+ * from Supabase (lib/exerciseService.js, hooks in useExerciseCatalog.js).
  *
- * Each entry pairs catalog info (name, muscles, ...) with the form-guide
- * component and form data from components/exercises. The "How to" steps and
- * "Common mistakes" lists are read from that form data (see getSteps /
- * getMistakes), so the coaching text lives in one place only.
- *
- * Data source: static. TODO(api): the info fields could come from
- * GET /api/exercises later; `Guide` and `form` always stay on the frontend.
- *
- * Entry shape:
- *   id          unique, URL-safe string
- *   name        display name
- *   category    "Push" | "Pull" | "Legs" | "Core" (any string works; filter
- *               chips are built from whatever categories exist)
- *   difficulty  "Beginner" | "Intermediate" | "Advanced"
- *   equipment   string[] (empty array = bodyweight only)
- *   muscles     { primary: string[], secondary: string[] }
- *   summary     one or two sentences
- *   Guide       form-guide React component
- *   form        that exercise's form module ({ phases, views })
+ * UI exercise shape:
+ *   id          the row's slug (URL-safe, stable)
+ *   dbId        the row's uuid (use this for workout_sets.exercise_id)
+ *   name, category ("Push" | "Pull" | "Legs" | "Core" | "Other"), difficulty
+ *   equipment   string[] (empty = bodyweight)
+ *   muscles     { primary, secondary }
+ *   summary     always a string (generated when the row has none)
+ *   instructions string[]   (detail rows only)
+ *   images      string[]    photo URLs
+ *   Guide/form  form-guide component + data, or undefined when there's no animation
+ *   trackerName string|null name the rep counter accepts, null = not camera-trackable
  */
 
-import {
-  PushUp, PullUp, Squat, SitUp,
-  pushUpForm, pullUpForm, squatForm, sitUpForm,
-} from "./index.js";
+import { imageUrls } from "../../lib/exerciseService.js";
+import { GUIDES } from "./guideRegistry.js";
 
-export const EXERCISES = [
-  {
-    id: "push-up",
-    name: "Push-Up",
-    category: "Push",
-    difficulty: "Beginner",
-    equipment: [],
-    muscles: { primary: ["Chest", "Triceps"], secondary: ["Front shoulders", "Core"] },
-    summary:
-      "A bodyweight press that builds the chest, shoulders and triceps while the core holds a rigid plank. Easy to scale by changing how high your hands are.",
-    Guide: PushUp,
-    form: pushUpForm,
-  },
-  {
-    id: "pull-up",
-    name: "Pull-Up",
-    category: "Pull",
-    difficulty: "Intermediate",
-    equipment: ["Pull-up bar"],
-    muscles: { primary: ["Lats", "Biceps"], secondary: ["Upper back", "Forearms"] },
-    summary:
-      "A bodyweight vertical pull that works the lats and upper back, with the biceps and grip helping. Controlled reps from a full hang matter more than the count.",
-    Guide: PullUp,
-    form: pullUpForm,
-  },
-  {
-    id: "back-squat",
-    name: "Barbell Back Squat",
-    category: "Legs",
-    difficulty: "Intermediate",
-    equipment: ["Barbell", "Squat rack"],
-    muscles: {
-      primary: ["Quadriceps", "Glutes"],
-      secondary: ["Hamstrings", "Core", "Lower back"],
-    },
-    summary:
-      "A barbell squat that loads the legs and hips with the bar across your upper back. Depth, a braced torso and a bar path over mid-foot are the keys.",
-    Guide: Squat,
-    form: squatForm,
-  },
-  {
-    id: "sit-up",
-    name: "Sit-Up",
-    category: "Core",
-    difficulty: "Beginner",
-    equipment: [],
-    muscles: { primary: ["Abs"], secondary: ["Hip flexors"] },
-    summary:
-      "A bodyweight trunk curl that trains the abs through a full range, from lying down to upright. Keep your feet anchored and your neck relaxed.",
-    Guide: SitUp,
-    form: sitUpForm,
-  },
-];
+export const CATEGORY_ORDER = ["Push", "Pull", "Legs", "Core", "Other"];
 
-/** Unique categories, in the order they first appear in EXERCISES. */
-export const CATEGORIES = [...new Set(EXERCISES.map((ex) => ex.category))];
+function describe(row) {
+  const bits = [row.level, row.category].filter(Boolean).join(" ").toLowerCase();
+  const gear = row.equipment?.length ? `using ${row.equipment.join(" + ").toLowerCase()}` : "with no equipment";
+  const target = row.primary_muscles?.length ? ` Targets the ${row.primary_muscles.join(", ").toLowerCase()}.` : "";
+  return `${bits ? `A ${bits} exercise` : "An exercise"} ${gear}.${target}`;
+}
 
-export const getExercise = (id) => EXERCISES.find((ex) => ex.id === id) ?? null;
+export function toExercise(row) {
+  const entry = row.guide_key ? GUIDES[row.guide_key] : undefined;
+  return {
+    id: row.slug,
+    dbId: row.id,
+    name: row.name,
+    category: row.movement ?? "Other",
+    difficulty: row.level ?? "Beginner",
+    equipment: row.equipment ?? [],
+    muscles: { primary: row.primary_muscles ?? [], secondary: row.secondary_muscles ?? [] },
+    summary: row.summary ?? describe(row),
+    instructions: row.instructions ?? [],
+    images: imageUrls(row),
+    Guide: entry?.Guide,
+    form: entry?.form,
+    trackerName: row.tracker_name ?? null,
+  };
+}
+
+/** Categories present in the list, in a fixed, sensible order. */
+export const getCategories = (exercises) => {
+  const present = new Set(exercises.map((ex) => ex.category));
+  return [...CATEGORY_ORDER.filter((c) => present.has(c)), ...[...present].filter((c) => !CATEGORY_ORDER.includes(c))];
+};
 
 /** Everything a search box should match against, lower-cased. */
 export const searchText = (ex) =>
@@ -96,14 +61,21 @@ export const searchText = (ex) =>
     .join(" ")
     .toLowerCase();
 
-/** The four "how to" steps: one per rep phase, using the side-view coaching text. */
+/**
+ * "How to do it" steps. Exercises with a form guide use its coaching text (one step per rep phase),
+ * so it can't drift from the animation; everything else uses the dataset's instructions.
+ */
 export function getSteps(ex) {
-  const view = ex.form.views.side ?? Object.values(ex.form.views)[0];
-  return view.good.map((text, i) => ({ title: ex.form.phases[i], text }));
+  if (ex.form) {
+    const view = ex.form.views.side ?? Object.values(ex.form.views)[0];
+    return view.good.map((text, i) => ({ title: ex.form.phases[i], text }));
+  }
+  return ex.instructions.map((text, i) => ({ title: `Step ${i + 1}`, text }));
 }
 
-/** Common mistakes from every view, de-duplicated by title. */
+/** Common mistakes from every view, de-duplicated by title. Empty when there's no form guide. */
 export function getMistakes(ex) {
+  if (!ex.form) return [];
   const seen = new Map();
   for (const view of Object.values(ex.form.views)) {
     for (const [title, text] of Object.values(view.bad)) {

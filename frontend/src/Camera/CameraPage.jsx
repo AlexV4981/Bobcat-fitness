@@ -9,6 +9,7 @@ import {
 import "./CameraPage.css";
 
 import { logCompletedSet } from "../lib/workoutLog";
+import { useTrackableExercises } from "../components/Exercises/useExerciseCatalog.js";
 
 /**
  * CameraPage
@@ -35,12 +36,14 @@ import { logCompletedSet } from "../lib/workoutLog";
  *   the application routing view state layer.
  */
 
-// Values become backend folder/file names, e.g. Push-Up_Set1/Push-Up_Rep1.json.
-const EXERCISE_OPTIONS = [
-  { value: "Push-Up", label: "Push-ups 🧱" },
-  { value: "Pull-Up", label: "Pull-ups 🦾" },
-  { value: "Squat", label: "Squats 🦵" },
-  { value: "Sit-Up", label: "Sit-ups 🧘" },
+// The picker is built from the exercises table (rows with a tracker_name), so it always matches what
+// the Python rep counter can track. This list is only used if that query fails or returns nothing.
+// `value` is sent to the backend and becomes folder/file names, e.g. Push-Up_Set1/Push-Up_Rep1.json.
+const FALLBACK_EXERCISE_OPTIONS = [
+  { value: "Push-Up", label: "Push-ups 🧱", name: "Push-Up", exerciseId: null },
+  { value: "Pull-Up", label: "Pull-ups 🦾", name: "Pull-Up", exerciseId: null },
+  { value: "Squat", label: "Squats 🦵", name: "Squat", exerciseId: null },
+  { value: "Sit-Up", label: "Sit-ups 🧘", name: "Sit-Up", exerciseId: null },
 ];
 
 const POLL_INTERVAL_MS = 300;
@@ -66,6 +69,10 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
   const [recordingError, setRecordingError] = useState("");
   const [phase, setPhase] = useState("waiting");
   const [tracking, setTracking] = useState(false);
+
+  const { options: dbOptions } = useTrackableExercises();
+  const exerciseOptions = dbOptions.length > 0 ? dbOptions : FALLBACK_EXERCISE_OPTIONS;
+  const selectedOption = exerciseOptions.find((o) => o.value === currentExercise);
 
   //lets the poller ignore a reply that belongs to the previously selected exercise
   const exerciseRef = useRef(currentExercise);
@@ -143,7 +150,12 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
     // Also save the set to the user's account (linked to the plan attempt, if any).
     // A failure here shows a message but doesn't lose the set locally.
     try {
-      await logCompletedSet({ exercise: currentExercise, reps: repCount, session });
+      await logCompletedSet({
+        exercise: selectedOption?.name ?? currentExercise,
+        exerciseId: selectedOption?.exerciseId ?? null,
+        reps: repCount,
+        session,
+      });
     } catch (error) {
       setRecordingError(`Set saved locally, but not to your account: ${error.message}`);
     }
@@ -191,7 +203,7 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
                 setRepCount(0);
               }}
             >
-              {EXERCISE_OPTIONS.map((o) => (
+              {exerciseOptions.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
