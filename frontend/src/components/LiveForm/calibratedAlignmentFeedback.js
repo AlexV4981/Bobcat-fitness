@@ -1,5 +1,5 @@
 import { LEGS, legAlignment, alignmentColor, ALIGNMENT_GREEN_DEGREES, ALIGNMENT_RED_DEGREES } from './alignment.js';
-import { visibleBodyAlignment, standingProjectionChange } from './visibleFormMetrics.js';
+import { visibleBodyAlignment, standingProjectionChange, calibratedStanceWidth } from './visibleFormMetrics.js';
 
 const EDGES=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
 
@@ -34,6 +34,10 @@ export class CalibratedAlignmentFeedback {
     const projection=standingProjectionChange(points,this.reference,body);
     //convert the projection cue to color-score units; never label this as a joint angle
     raw.torsoProjection=Math.max(0,projection.change-.15)/.25*15;
+    const stance=calibratedStanceWidth(points,this.reference,body);
+    if(!stance.assessed)return neutral('Keep your shoulders, hips and feet visible to check stance width.','stance_width_uncertain');
+    //a five-percent tracking tolerance prevents tiny spacing jitter from changing the verdict
+    raw.stanceWidth=stance.assessed && stance.excess>0?6+stance.excess*45:0;
     const scores=Object.fromEntries(Object.entries(raw).map(([key,error])=>[key,this.score(key,error,at)]));
     const confirmed=Object.values(scores).every(score=>score.confirmed);
     const errors=Object.fromEntries(Object.entries(scores).map(([key,score])=>[key,score.error]));
@@ -43,7 +47,7 @@ export class CalibratedAlignmentFeedback {
     //body posture propagates consistently; a local knee deviation stays on its own leg
     const bodyError=Math.max(errors.torsoLean,errors.shoulderTilt,errors.hipTilt,errors.torsoProjection);
     for(const edge of EDGES)edgeErrors[edge.join(',')]=bodyError;
-    for(const leg of LEGS)for(const edge of [[leg.hip,leg.knee],[leg.knee,leg.ankle]])edgeErrors[edge.join(',')]=Math.max(errors[leg.name],bodyError);
+    for(const leg of LEGS)for(const edge of [[leg.hip,leg.knee],[leg.knee,leg.ankle]])edgeErrors[edge.join(',')]=Math.max(errors[leg.name],bodyError,errors.stanceWidth);
     const edgeStates={},edgeColors={};
     for(const [key,error] of Object.entries(edgeErrors)){
       edgeStates[key]=confirmed?label(error):'uncertain';
@@ -56,6 +60,7 @@ export class CalibratedAlignmentFeedback {
       torsoLean:'Your torso is leaning sideways from your standing reference.',
       shoulderTilt:'Your shoulders are uneven compared with your standing reference.',
       hipTilt:'Your hips are uneven compared with your standing reference.',
+      stanceWidth:'Bring your feet back to about shoulder-width apart for the standard squat.',
       torsoProjection:'Your upper-body projection changed from your upright reference. Stand tall and face the camera.'};
     const message=!confirmed?'Checking visible alignment…':worst<=ALIGNMENT_GREEN_DEGREES?'Visible alignment is close to your reference. Depth and arm technique are not assessed.':cues[dominant];
     return {state,message,points,checkedEdges:EDGES,edgeStates,edgeColors,phase,rep,
@@ -64,7 +69,7 @@ export class CalibratedAlignmentFeedback {
         alignmentErrorDegrees:{left:errors.left,right:errors.right},signedAlignmentChangeDegrees:signed,
         bodyAlignment:body,bodyAlignmentErrors:{torsoLean:errors.torsoLean,shoulderTilt:errors.shoulderTilt,hipTilt:errors.hipTilt},
         overallAngularErrorDegrees:Math.max(errors.left,errors.right,errors.torsoLean,errors.shoulderTilt,errors.hipTilt),
-        overallAlignmentSeverity:worst/15,standingProjectionChange:projection.change,standingProjectionAssessed:projection.assessed,projectionSeverity:errors.torsoProjection/15,
+        overallAlignmentSeverity:worst/15,stanceWidthRatio:stance.ratio,stanceWidthAssessed:stance.assessed,stanceWidthSeverity:errors.stanceWidth/15,stanceWidthTolerance:1.05,standingProjectionChange:projection.change,standingProjectionAssessed:projection.assessed,projectionSeverity:errors.torsoProjection/15,
         edgeSeverity:Object.fromEntries(Object.entries(edgeErrors).map(([key,error])=>[key,error/15])),dominantAlignmentCheck:dominant,
         colorScope:'Body posture tints the skeleton; knee errors add severity to the corresponding leg. No independent arm-technique or squat-depth assessment.',
         feedbackReason:confirmed?null:'alignment_confirming'}};

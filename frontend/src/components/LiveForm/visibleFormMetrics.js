@@ -25,3 +25,19 @@ export function standingProjectionChange(points,reference,body) {
   const ratio=(body.torsoLength/body.hipSpan)/(target.torsoLength/target.hipSpan);
   return {change:Math.max(0,1-ratio),assessed:true};
 }
+
+//compare ankle spacing with the calibrated shoulder width without relearning a wide stance
+export function calibratedStanceWidth(points,reference,body) {
+  if(![11,12,23,24,27,28].every(id=>points[id]))return {assessed:false,ratio:0,excess:0};
+  const target=reference.body;
+  let shoulderWidth=Math.hypot(points[11].x-points[12].x,points[11].y-points[12].y);
+  if(target){
+    const hipWidth=target.hipSpan/Math.cos(target.hipTilt*Math.PI/180);
+    const scale=distance(points[23],points[24])/hipWidth;
+    shoulderWidth=target.shoulderSpan/Math.cos(target.shoulderTilt*Math.PI/180)*scale;
+  }
+  const ankleWidth=Math.abs(points[27].x-points[28].x);
+  if(!Number.isFinite(shoulderWidth) || shoulderWidth<12 || !Number.isFinite(body.shoulderSpan))return {assessed:false,ratio:0,excess:0};
+  const ratio=ankleWidth/shoulderWidth;
+  return {assessed:true,ratio,excess:Math.max(0,ratio-1.05),ankleWidth,shoulderWidth};
+}

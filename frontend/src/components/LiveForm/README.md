@@ -16,6 +16,10 @@ or leaving the page releases the stream, worker and audio context.
 These are prototype comparisons with projected alignment, not a perfect-squat,
 medical, calibrated-depth or independent arm-technique verdict.
 
+- Standard squat stance compares ankle-center spacing with calibrated shoulder
+  width, adjusted for image scale. A 5% tolerance absorbs tracking jitter. Wider
+  stance moves both legs away from green and becomes red when substantially
+  wider; recalibration cannot redefine that width target.
 - Knee checks compare inward changes and large outward deviations with the
   personal hip-to-ankle reference. A provisional 30-degree outward allowance
   avoids immediately flagging normal outward projection during descent.
