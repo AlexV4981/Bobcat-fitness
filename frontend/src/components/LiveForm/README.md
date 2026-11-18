@@ -93,3 +93,27 @@ reliable visible posture can still be colored while counting pauses.
 Live feedback uses short cues such as “Uneven shoulders”, “Leaning sideways”,
 “Keep feet shoulder-width apart” and “Alignment on track”. The legend retains
 the visible-alignment scope and neutral-color explanation.
+
+## Independent leg cycles
+
+Each leg owns its own live standing reference, confidence/geometry checks and
+standing-to-bend-to-standing cycle. Losing one leg clears only its partial cycle;
+a usable opposite leg can continue. Global stale frames and full tracking loss
+still require fresh standing acquisition. Counter-only torso pauses discard that
+leg's partial cycle while retaining its own previously learned reference.
+
+One coordinator emits a single rep event. After a completion, returns from cycles
+that started before that event are ignored, preventing delayed opposite-leg
+returns from double counting. Partial cycles from different legs are never
+combined. No fixed preferred side or mid-cycle transfer of standing references
+is used. The angular, hip-drop and timing thresholds are unchanged.
+
+Both checkers use the same detected frame and validated image-plane points. A
+jump on one leg no longer resets the healthy leg's counter. Unreliable leg
+geometry/jumps still pause form coloring without consuming a valid completed
+rep. Red alignment feedback can accompany a completed movement; colors are not
+a condition for counting a rep. Viewpoint limits of single-camera 2D angles
+remain; symmetric logic does not guarantee detection at every body rotation.
+
+The public phase/rep/points/metrics result and camera callback remain unchanged.
+Additional per-leg tracking metrics identify which chain completed a cycle.

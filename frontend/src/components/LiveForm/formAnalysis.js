@@ -22,11 +22,15 @@ export class FormAnalysis {
     }
     const points = landmarks.map(p => visible(p) ? { x:p.x*width,y:p.y*height } : null);
     //hide sudden jumps instead of keeping an old point or guessing a replacement
-    let jumped = false;
+    let jumped = false;const jumpedJoints=[];
     if (this.previous && gap < MAX_FRAME_AGE_MS) {
       const limit = Math.hypot(width,height)*(0.035 + gap/1000*1.2);
       points.forEach((p,i) => {
-        if (p && this.previous[i] && distance(p,this.previous[i]) > limit) { points[i]=null; if (exercise!=='Squat' || SQUAT_JOINTS.has(i)) jumped=true; }
+        if (p && this.previous[i] && distance(p,this.previous[i]) > limit) {
+          points[i]=null;
+          if(exercise!=='Squat')jumped=true;
+          else if(SQUAT_JOINTS.has(i))jumpedJoints.push(i);
+        }
       });
     }
     //use these raw detections for the next comparison so tracking can recover after a jump
@@ -34,12 +38,13 @@ export class FormAnalysis {
     const fail = (message) => { this.candidate=null; this.repPhase='waiting'; this.trackedSide=null; this.previousBones=null; this.squat.reset(); this.feedback?.pause(); return unknown(message,points); };
     if (jumped) return fail('Tracking changed · keep body visible');
     if (exercise === 'Squat') {
-      const movement=this.squat.analyze(points,landmarks,width,height,capturedAt);
+      const movement=this.squat.analyze(points,landmarks,width,height,capturedAt,jumpedJoints);
       if(!this.feedback)return movement;
-      if(['joint_geometry','joint_jump'].includes(movement.metrics.trackingReason)){
+      const geometryReason=movement.metrics.formGeometryReason;
+      if(geometryReason){
         this.feedback.pause();
-        return {...movement,message:'Leg tracking unclear · stand upright',
-          metrics:{...movement.metrics,formTrackingValid:false,feedbackReason:movement.metrics.trackingReason==='joint_geometry'?'leg_geometry_uncertain':'joint_jump_uncertain'}};
+        return {...unknown('Leg tracking unclear · stand upright',points,
+          {...movement.metrics,formTrackingValid:false,feedbackReason:geometryReason==='joint_geometry'?'leg_geometry_uncertain':'joint_jump_uncertain'}),phase:movement.phase,rep:movement.rep};
       }
       //rep-count framing can pause while confident posture observations remain assessable
       return this.feedback.analyze(points,capturedAt,movement.phase,movement.rep,
