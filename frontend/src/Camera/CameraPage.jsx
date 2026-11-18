@@ -78,7 +78,7 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
                 setRepCount(0);
               }}
             >
-              {exerciseOptions.map((o) => (
+              {EXERCISE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
