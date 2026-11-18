@@ -91,7 +91,7 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
 
           <p className="cam-tracking-status">
             {currentExercise === "Squat"
-              ? "Face the screen and hold both arms out for two seconds. Lower them during the five-second countdown, then start squatting at the chime."
+              ? "Face the screen with your feet about shoulder-width apart. Hold both arms out for two seconds, lower them during the five-second countdown, then start at the chime."
               : "Skeleton preview is available. Use Count Rep for this exercise; automatic counting and form checks are not available yet."}
           </p>
           {currentExercise === "Squat" && <p className="cam-tracking-status">

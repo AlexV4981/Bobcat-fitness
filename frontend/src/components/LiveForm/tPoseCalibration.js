@@ -32,7 +32,7 @@ export class TPoseCalibration {
   reset() {
     this.phase='positioning';this.startedAt=null;this.lastAt=null;this.countdownAt=null;
     this.samples=[];this.readySamples=[];this.anchor=null;this.reference=null;this.tPoseReference=null;this.width=null;this.height=null;
-    this.reason='positioning';this.message='T-pose: face the camera, extend both arms and hold for two seconds.';
+    this.reason='positioning';this.message='T-pose: feet about shoulder-width apart, arms out, hold for two seconds.';
   }
   invalidate() {
     if(this.phase==='active')return this.status();
@@ -100,7 +100,7 @@ export class TPoseCalibration {
     this.samples.push(sample);
     if(at-this.startedAt>=2000 && this.samples.length>=15){
       this.reference=referenceFromSamples(this.samples,width,height);this.tPoseReference=this.reference;
-      this.phase='countdown';this.reason=null;this.countdownAt=now;this.message='T-pose captured. Lower your arms and settle into your squat stance.';
+      this.phase='countdown';this.reason=null;this.countdownAt=now;this.message='T-pose captured. Lower your arms and keep your feet about shoulder-width apart.';
       this.samples=[];this.anchor=null;
     }
     return this.status(now);

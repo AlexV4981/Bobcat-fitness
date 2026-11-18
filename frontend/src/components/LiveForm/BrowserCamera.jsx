@@ -163,7 +163,7 @@ export default function BrowserCamera({ exercise, onRep, resetToken }) {
     <div className="live-form-controls">
       <button className="cam-btn cam-btn--primary" onClick={running || starting ? stop : start}>{starting ? 'Cancel startup' : running ? 'Stop camera' : 'Start camera'}</button>
       {running && exercise==='Squat' && <button className="cam-btn cam-btn--ghost" onClick={()=>recalibrate()}>Recalibrate T-pose</button>}
-      <p>Camera processing stays on this device. Hold a T-pose for 2 seconds, lower your arms, and start at the chime.</p>
+      <p>Camera processing stays on this device. Keep your feet about shoulder-width apart. Hold a T-pose for 2 seconds, lower your arms, and start at the chime.</p>
     </div>
     <p className={`live-form-feedback live-form-feedback--${displayedFeedback.state}`} role="status">{displayedFeedback.message}</p>
     {soundNotice && <p className="live-form-sound-note" role="status">{soundNotice}</p>}
