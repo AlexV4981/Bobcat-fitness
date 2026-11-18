@@ -7,9 +7,9 @@ export const SQUAT_JOINTS = new Set(SIDES.flat());
 
 //count an observed movement cycle separately from the front-view knee-path checks
 export class SquatAnalysis {
-  constructor() { this.reset(); }
+  constructor(calibration=null) { this.calibration=calibration; this.reset(); }
   reset() {
-    this.frontal=new FrontalSquatFeedback();
+    this.frontal=this.calibration?null:new FrontalSquatFeedback();
     this.side=null; this.bones=null; this.reference=null; this.phase='waiting'; this.standSince=null;
     this.startedAt=null; this.bendSince=null; this.reachedBend=false; this.minKnee=180;
   }
@@ -29,13 +29,21 @@ export class SquatAnalysis {
     }
     const bones=[torso,thigh,shin];
     //a bent limb can look shorter in the image; compare with standing lengths instead of the current torso
+    if(!this.reference){
+      const captured=this.calibration?.standing?.[side[0]===11?'left':'right'];
+      if(captured)this.reference={bones:[...captured.bones],hipY:captured.hipY};
+    }
     const reference=this.reference;
     const geometryOK=reference
       ? bones.every((n,i)=>n>=Math.max(8,reference.bones[i]*.25) && n<=reference.bones[i]*1.8)
       : [thigh,shin].every(n=>n>=torso*.35 && n<=torso*1.8);
-    if (!geometryOK) return fail('Leg geometry is uncertain. Keep your legs clear of obstructions.',{trackingValid:false,trackingReason:'joint_geometry'});
+    if (!geometryOK) {
+      const legsOK=reference && bones.slice(1).every((n,i)=>n>=Math.max(8,reference.bones[i+1]*.25) && n<=reference.bones[i+1]*1.8);
+      return fail('Counter geometry is uncertain. Keep your body visible.',{trackingValid:false,trackingReason:legsOK?'counter_torso_geometry':'joint_geometry'});
+    }
     if (this.bones && bones.some((n,i)=>Math.abs(n/this.bones[i]-1)>.35)) {
-      return fail('Joint proportions changed. Waiting for consistent tracking.',{trackingValid:false,trackingReason:'joint_jump'});
+      const legsChanged=bones.slice(1).some((n,i)=>Math.abs(n/this.bones[i+1]-1)>.35);
+      return fail('Joint proportions changed. Waiting for consistent tracking.',{trackingValid:false,trackingReason:legsChanged?'joint_jump':'counter_torso_change'});
     }
     this.bones=bones;
     const knee=angle(h,k,a);
@@ -72,6 +80,7 @@ export class SquatAnalysis {
     const viewLength=this.reference?.bones[0] ?? torso;
     const metrics={side:side[0]===11?'left':'right',kneeAngle:knee,hipDrop,trackingValid:true,
       countingReason:rep?'completed_cycle':this.phase==='waiting'?'need_standing':this.phase==='ready'?'waiting_for_bend':this.reachedBend?'waiting_for_return':'need_sustained_bend'};
+    if(this.calibration)return {...unknown('Movement cycle tracked.',points,metrics),phase:this.phase,rep};
     return this.frontal.analyze(points,at,this.phase,rep,metrics,viewLength);
   }
 }

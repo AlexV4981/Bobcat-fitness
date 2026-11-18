@@ -91,11 +91,11 @@ export default function CameraPage({ history = [], onSaveSet, session, onNavigat
 
           <p className="cam-tracking-status">
             {currentExercise === "Squat"
-              ? "Face the screen with your whole body and both feet visible. Stand normally for a moment, then squat. Automatic counting follows a bend and return to standing."
+              ? "Face the screen and hold both arms out for two seconds. Lower them during the five-second countdown, then start squatting at the chime."
               : "Skeleton preview is available. Use Count Rep for this exercise; automatic counting and form checks are not available yet."}
           </p>
           {currentExercise === "Squat" && <p className="cam-tracking-status">
-            Colors check inward knee movement only. Squat depth and overall form are not assessed. Check your count before saving.
+            Colors compare visible knee alignment, sideways torso lean and shoulder/hip balance with your reference. Body posture tints the whole skeleton; knee changes affect that leg. This does not certify perfect form, depth or arm technique.
           </p>}
 
           <div className="cam-actions">
