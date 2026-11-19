@@ -30,12 +30,11 @@ async function currentUserId() {
 /**
  * Saves one completed set.
  * @param {Object} args
- * @param {string} args.exercise   display name saved with the set, e.g. "Push-Up"
- * @param {string|null} [args.exerciseId]  public.exercises.id; links the set to the catalog (null = unknown)
+ * @param {string} args.exercise   e.g. "Push-Up"
  * @param {number} args.reps       reps counted in the set
  * @param {{runId: string, planExerciseId: string, targetReps?: number}} [args.session]
  */
-export async function logCompletedSet({ exercise, exerciseId = null, reps, session }) {
+export async function logCompletedSet({ exercise, reps, session }) {
   const userId = await currentUserId();
   const runId = session?.runId ?? null;
   const planExerciseId = session?.planExerciseId ?? null;
@@ -58,7 +57,6 @@ export async function logCompletedSet({ exercise, exerciseId = null, reps, sessi
     run_id: runId,
     plan_exercise_id: planExerciseId,
     exercise,
-    exercise_id: exerciseId,
     set_number: setNumber,
     reps,
     target_reps: session?.targetReps ?? null,
@@ -97,7 +95,7 @@ async function refreshRunProgress(runId, planExerciseId, setsLogged) {
       plan_snapshot: days,
       total_exercises: total,
       completed_exercises: done,
-      completion_pct: total === 0 ? 0 : Math.round((done / total) * 100),
+      // completion_pct is a generated column; the database computes it from the two counters
       // undefined fields are not sent, so an abandoned attempt isn't reopened
       status: finished ? "completed" : undefined,
       completed_at: finished ? new Date().toISOString() : undefined,
@@ -106,3 +104,5 @@ async function refreshRunProgress(runId, planExerciseId, setsLogged) {
     .eq("id", runId);
   if (updateError) throw updateError;
 }
+
+

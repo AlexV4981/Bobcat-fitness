@@ -25,6 +25,18 @@ export default function App() {
   const [workoutHistory, setWorkoutHistory] = useState([]);
   const handleSaveSet = (record) => setWorkoutHistory((prev) => [record, ...prev]);
 
+  // Set when the Workouts tab redirects to the AI Workout page: { id, mode: 'view' | 'edit' }.
+  // Any normal navigation clears it, so the sidebar's "AI Workout" opens a fresh generator.
+  const [workoutIntent, setWorkoutIntent] = useState(null);
+  const navigate = (next) => {
+    setWorkoutIntent(null);
+    setPage(next);
+  };
+  const openWorkout = (id, mode = 'view') => {
+    setWorkoutIntent({ id, mode });
+    setPage('ai-workout');
+  };
+
   // same `user` shape your pages already consume
   const domain = import.meta.env.VITE_AUTH_EMAIL_DOMAIN
   const authEmail = authUser?.email ?? ''
@@ -54,7 +66,7 @@ export default function App() {
 
   const handleLogout = async () => {
     await signOut();
-    setPage('home');
+    navigate('home');
   };
 
   const handleSaveProfile = async ({ username, weight, height, goal }) => {
@@ -93,9 +105,9 @@ export default function App() {
   if (page === 'camera') {
     return (
       <div className="home">
-        <Sidebar activePage="camera" onNavigate={setPage} onLogout={handleLogout} />
+        <Sidebar activePage="camera" onNavigate={navigate} onLogout={handleLogout} />
         <main className="content">
-          <CameraPage history={workoutHistory} onSaveSet={handleSaveSet} onNavigate={setPage} />
+          <CameraPage history={workoutHistory} onSaveSet={handleSaveSet} onNavigate={navigate} />
         </main>
       </div>
     );
@@ -103,9 +115,13 @@ export default function App() {
   if (page === 'workouts') {
     return (
       <div className="home">
-        <Sidebar activePage="workouts" onNavigate={setPage} onLogout={handleLogout} />
+        <Sidebar activePage="workouts" onNavigate={navigate} onLogout={handleLogout} />
         <main className="content">
-          <WorkoutSchedulePage />
+          <WorkoutSchedulePage
+            onOpenWorkout={openWorkout}
+            onNavigate={navigate}
+            isGuest={user.isGuest}
+          />
         </main>
       </div>
     );
@@ -113,7 +129,7 @@ export default function App() {
   if (page === 'AI Dieting') {
     return (
       <div className="home">
-        <Sidebar activePage="AI Dieting" onNavigate={setPage} onLogout={handleLogout} />
+        <Sidebar activePage="AI Dieting" onNavigate={navigate} onLogout={handleLogout} />
         <main className="content">
           <AIDietingPage userGoal={user.goal} />
         </main>
@@ -123,7 +139,7 @@ export default function App() {
   if (page === 'exercises') {
     return (
       <div className="home">
-        <Sidebar activePage="exercises" onNavigate={setPage} onLogout={handleLogout} />
+        <Sidebar activePage="exercises" onNavigate={navigate} onLogout={handleLogout} />
         <ExercisesPage />
       </div>
     );
@@ -131,9 +147,9 @@ export default function App() {
   if (page === 'ai-workout') {
     return (
       <div className="home">
-        <Sidebar activePage="ai-workout" onNavigate={setPage} onLogout={handleLogout} />
+        <Sidebar activePage="ai-workout" onNavigate={navigate} onLogout={handleLogout} />
         <main className="content">
-          <AIWorkoutPage />
+          <AIWorkoutPage intent={workoutIntent} isGuest={user.isGuest} />
         </main>
       </div>
     );
@@ -141,7 +157,7 @@ export default function App() {
   if (page === 'profile') {
     return (
       <div className="home">
-        <Sidebar activePage="profile" onNavigate={setPage} onLogout={handleLogout} />
+        <Sidebar activePage="profile" onNavigate={navigate} onLogout={handleLogout} />
         <main className="content">
           <ProfilePage
             user={user.username}
@@ -164,7 +180,7 @@ export default function App() {
   if (page === 'about-us') {
     return (
       <div className="home">
-        <Sidebar activePage="about-us" onNavigate={setPage} onLogout={handleLogout} />
+        <Sidebar activePage="about-us" onNavigate={navigate} onLogout={handleLogout} />
         <AboutUsPage />
       </div>
     );
@@ -173,8 +189,11 @@ export default function App() {
   return (
     <HomePage
       userName={user.username}
-      onNavigate={setPage}
+      onNavigate={navigate}
       onLogout={handleLogout}
     />
   );
 }
+
+
+

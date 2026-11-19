@@ -181,7 +181,7 @@
 }
 
 /* history */
-.aw .hist { display: flex; flex-direction: column; gap: 6px; }
+.aw .hist { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
 .aw .hist button {
   text-align: left;
   background: var(--bg);
@@ -195,6 +195,7 @@
   gap: 8px;
 }
 .aw .hist button:hover { background: var(--tint-peach); }
+.aw .hist button.on { background: var(--tint-peach); border-color: var(--accent); }
 .aw .hist button span { color: var(--ink-soft); font-size: 13px; white-space: nowrap; }
 
 /* ---------- Workout column ---------- */
@@ -352,3 +353,72 @@
 .aw .timer.over button { color: var(--accent-ink); border-color: rgba(44, 39, 26, 0.4); }
 
 @media (prefers-reduced-motion: reduce) { .aw * { transition: none !important; } }
+
+
+
+
+
+/* ---------- Workout CRUD: editor, messages, saved state ---------- */
+.aw .hint { margin: 0; font-size: 13px; color: var(--ink-soft); }
+
+.aw .flash { margin: 14px 0 0; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; }
+.aw .flash--ok { background: rgba(208, 231, 157, 0.18); color: var(--tint-green); }
+.aw .flash--err { background: rgba(244, 216, 211, 0.16); color: #ffd9d3; }
+
+.aw .actions { align-items: center; }
+
+/* inputs: shared by hero (dark) and card (light) */
+.aw .ed {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+.aw .ed:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.aw .ed-title { font: 600 24px/1.2 var(--display); margin-top: 6px; }
+.aw .ed-summary { margin-top: 12px; max-width: 62ch; min-height: 72px; resize: vertical; }
+.aw .ed-date { display: flex; align-items: center; gap: 10px; color: var(--hero-muted); font-size: 13px; font-weight: 700; }
+.aw .ed-date .ed { width: auto; }
+.aw .ed-stat { font-weight: 700; padding: 6px 8px; }
+.aw .ed-num { width: 84px; }
+
+.aw .ed-block-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.aw .ed-block-head > .ed { flex: 1 1 180px; font-weight: 600; }
+.aw .ed-inline { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); }
+
+.aw .ex-edit { grid-template-columns: 1fr auto; }
+.aw .ex-fields { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.aw .ex-nums { display: flex; gap: 12px; flex-wrap: wrap; }
+.aw .ex-nums label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-soft); }
+
+.aw .ed-list { display: flex; flex-direction: column; gap: 8px; }
+.aw .ed-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
+@media (max-width: 560px) { .aw .ed-row { grid-template-columns: 1fr auto; } .aw .ed-row .ed:nth-child(2) { grid-column: 1; } }
+
+.aw .icon-btn {
+  width: 32px; height: 32px; padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.aw .icon-btn:hover { color: #b3261e; border-color: #b3261e; }
+
+.aw .add-btn {
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px dashed #cfc8b6;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 14px;
+}
+.aw .add-btn:hover { border-color: var(--accent); background: var(--tint-peach); }
+.aw .add-block { margin-top: 22px; }
