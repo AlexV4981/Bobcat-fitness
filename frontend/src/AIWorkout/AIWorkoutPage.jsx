@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import WorkoutForm from "./components/WorkoutForm.jsx";
 import WorkoutSheet from "./components/WorkoutSheet.jsx";
 import RestTimer from "./components/RestTimer.jsx";
 import History from "./components/History.jsx";
+import ConfirmDialog from "../components/WorkoutCrud/ConfirmDialog.jsx";
 import { generateWorkout } from "./lib/api.js";
-import { storage, KEYS } from "./lib/storage.js";
+import { KEYS } from "./lib/storage.js";
 import { SAMPLE_WORKOUT } from "./lib/sample.js";
 import {
   createWorkout,
@@ -19,11 +20,32 @@ import "./AIWorkoutPage.css";
 
 const SAMPLE = withIds(SAMPLE_WORKOUT);
 
-export default function AIWorkoutPage() {
-  const [history, setHistory] = useState(() => storage.get(KEYS.history, []));
-  const [workout, setWorkout] = useState(() => history[0] || SAMPLE_WORKOUT);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+/**
+ * AI Workout page = Create + Update (and Read/Delete of the open workout).
+ *
+ *   Create   "Build my workout" makes an unsaved draft; "Save workout" inserts it.
+ *   Read     saved workouts are listed under the form; the Workouts tab can open one here.
+ *   Update   Edit (options menu) turns the sheet into an editor; Regenerate refills a saved workout.
+ *            Both leave unsaved changes until "Save changes".
+ *   Delete   options menu -> confirm -> row removed.
+ *
+ * Props:
+ *   intent    { id, mode: "view" | "edit" } when the Workouts tab redirected here
+ *   isGuest   guests can view sample; sign-in required for AI generation and saving
+ */
+export default function AIWorkoutPage({ intent = null, isGuest = false }) {
+  const [rows, setRows] = useState([]); // saved workouts, database shape
+  const [listError, setListError] = useState("");
+  const [workout, setWorkout] = useState(SAMPLE); // the working copy shown on the right
+  const [dirty, setDirty] = useState(false); // working copy differs from what's saved
+  const [mode, setMode] = useState("view"); // "view" | "edit"
+  const [loading, setLoading] = useState(false); // generating
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(""); // generator form error
+  const [message, setMessage] = useState(null); // { type: "ok" | "err", text } shown on the sheet
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [restEnd, setRestEnd] = useState(null);
   const lastOptions = useRef(null);
   const editBackup = useRef(null);
@@ -32,9 +54,10 @@ export default function AIWorkoutPage() {
 
   const confirmDiscard = () => !dirty || window.confirm("You have unsaved changes. Discard them?");
 
-  // Remove any API key previously stored by the old browser-direct implementation.
+  // Delete any Gemini key saved by the old browser-direct integration.
+  // New AI generation uses the authenticated Cloudflare Functions instead.
   useEffect(() => {
-    try {localStorage.removeItem(KEYS.apiKey);} catch { /* storage can be disabled */ }
+    try { localStorage.removeItem(KEYS.apiKey); } catch { /* storage might be disabled */ }
   }, []);
 
   // Show a workout in view or edit mode, discarding whatever was on screen.
@@ -46,15 +69,68 @@ export default function AIWorkoutPage() {
     lastOptions.current = w.meta?.options ?? null;
     setMessage(null);
     setError("");
-    lastOptions.current = opts;
+  }, []);
+
+  // ---------------- Read ----------------
+  useEffect(() => {
+    let active = true;
+    listWorkouts()
+      .then((r) => active && setRows(r))
+      .catch((err) => active && setListError(err.message || "Couldn't load your saved workouts."));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Redirected from the Workouts tab: open that workout (in edit mode if asked).
+  useEffect(() => {
+    if (!intent?.id) return;
+    let active = true;
+    getWorkout(intent.id)
+      .then((row) => {
+        if (!active) return;
+        if (!row) return setMessage({ type: "err", text: "That workout no longer exists." });
+        const w = workoutFromRow(row);
+        if (!w) {
+          return setMessage({
+            type: "err",
+            text: "That workout wasn't made with the AI generator, so it can't be opened here.",
+          });
+        }
+        open(w, intent.mode === "edit" ? "edit" : "view");
+      })
+      .catch((err) => active && setMessage({ type: "err", text: err.message || "Couldn't open that workout." }));
+    return () => {
+      active = false;
+    };
+  }, [intent, open]);
+
+  const pick = (w) => {
+    if (w.id === workout.id || !confirmDiscard()) return;
+    open(w);
+  };
+
+  // ---------------- Create (generate a draft) ----------------
+  const build = async (opts, { replace = false } = {}) => {
+    setError("");
+    if (!confirmDiscard()) return;
+
+    // Store only workout options. Never collect or forward a Gemini key.
+    const options = opts;
+    lastOptions.current = options;
 
     setLoading(true);
     setMessage(null);
     try {
-      const w = await generateWorkout(opts);
-      const full = { ...w, createdAt: Date.now(), done: [] };
-      setWorkout(full);
-      upsert(full);
+      const generated = withIds(await generateWorkout(options));
+      setWorkout((prev) =>
+        replace && !prev.isSample
+          ? // Regenerate: same workout (same row), new contents
+            { ...generated, id: prev.id, createdAt: prev.createdAt, scheduledDate: prev.scheduledDate, done: [], meta: { ...prev.meta, options } }
+          : { ...generated, createdAt: Date.now(), scheduledDate: localToday(), done: [], meta: { options } },
+      );
+      setDirty(true);
+      setMode("view");
       if (window.innerWidth < 860) document.querySelector(".sheet")?.scrollIntoView({ behavior: "smooth" });
     } catch (err) {
       setError(err.message);
@@ -183,7 +259,13 @@ export default function AIWorkoutPage() {
 
       <div className="wrap">
         <WorkoutForm onSubmit={build} loading={loading} error={error}>
-          <History items={history} onPick={setWorkout} />
+          {isGuest && <p className="hint">Sign in to generate AI workouts and save your workout plans.</p>}
+          {listError && (
+            <div className="err" role="alert">
+              {listError}
+            </div>
+          )}
+          <History items={history} activeId={workout.id} onPick={pick} />
         </WorkoutForm>
 
         <WorkoutSheet
