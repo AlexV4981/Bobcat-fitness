@@ -1,110 +1,162 @@
-# Browser camera tracking
+# Browser squat alignment feedback
 
-The Camera page keeps the shared workout layout and runs pose inference on the
-user's device. There is no laptop/server processing selector or separate Python
-camera service to start. The existing application backend remains available for
-other workflows; this page does not upload camera frames to its camera APIs.
+Press Start camera, face the screen and hold both arms out for two seconds.
+T-pose instructions and hold progress are below the video; the top-left preview
+label is removed. There is no cutout or body-size matching. Lower your arms during the five-second countdown and start at the chime. Upright samples
+confirm a comfortable leg stance; body-balance targets remain fixed to T-pose.
+Recalibrate is available manually. Ordinary stance changes do not erase the lock.
 
-## Start the app
+The camera uses the existing browser pose worker. No ONNX depth model, Python
+camera service or frame upload is required. Camera startup prepares audio from
+the button gesture, with a visual start cue when audio is unavailable. Stopping
+or leaving the page releases the stream, worker and audio context.
 
-1. Keep the project's normal frontend environment configuration for account features.
-2. In `frontend/`, run `npm ci`, then `npm run dev -- --host 0.0.0.0` as separate
-   commands. If your terminal is already there, do not run `cd frontend` again.
-3. Open the printed local URL, choose Camera, select Squat and press Start camera.
-4. Allow camera access. Face the screen with your full body and both feet visible.
-   Stand normally briefly, then perform a comfortable squat and return to standing.
+## Color rules
 
-A deployed site must use HTTPS; localhost also permits camera access. The browser
-needs camera, worker, ImageBitmap and MediaPipe runtime support. Laptop and phone
-browsers use the same page, but device/browser performance still needs validation.
+These are prototype comparisons with projected alignment, not a perfect-squat,
+medical, calibrated-depth or independent arm-technique verdict.
 
-`predev` and `prebuild` run `scripts/prepare-pose-assets.mjs`. It copies the pinned
-`@mediapipe/tasks-vision` runtime into `public/pose/` and downloads the Full pose
-model when absent or when its SHA-256 checksum differs. Initial preparation needs
-network access. The generated runtime and model are served with the frontend and
-are excluded from Git. Users receive these assets from the app when tracking
-starts; there is no manual model installation, ONNX setup, marker or T-pose step.
+- Standard squat stance compares ankle-center spacing with calibrated shoulder
+  width, adjusted for image scale. A 5% tolerance absorbs tracking jitter. Wider
+  stance moves both legs away from green and becomes red when substantially
+  wider; recalibration cannot redefine that width target.
+- Knee checks compare inward changes and large outward deviations with the
+  personal hip-to-ankle reference. A provisional 30-degree outward allowance
+  avoids immediately flagging normal outward projection during descent.
+- Sideways torso lean, shoulder tilt and hip tilt are compared with T-pose.
+  Body-posture deviations tint the entire visible skeleton consistently.
+- Knee deviations add severity to that leg. They do not randomly tint unrelated
+  arms or the opposite leg. Shared joint dots use the strongest adjacent score.
+- Near standing, a large change in torso length relative to hip width can produce
+  an upright-projection cue. This cannot distinguish forward from backward lean.
+  It is not applied to normal bent-knee descent or the bottom position.
 
-## How a frame reaches the screen
+Green/yellow/red reference stops are 3/9/15 color-score units. Stronger errors
+continue changing through deeper reds at 30 and 60 rather than saturating at 15.
+Angular channels use degrees; the standing projection cue uses a separate
+normalized deviation mapped to the color scale, not an anatomical angle.
 
-1. `CameraPage.jsx` owns exercise selection, visible rep count, manual corrections,
-   session history and account set saving. `BrowserCamera.jsx` owns camera access
-   and releases the stream and worker when stopped or when the page unmounts.
-2. The browser shows a mirrored live video. At most one frame is in flight to
-   `public/pose-worker.js`; the camera loop sends no faster than about 30 fps and
-   skips unchanged video frames. Inference can run slower than that limit.
-3. The worker uses MediaPipe Pose Landmarker in video mode for one person. It
-   attempts GPU inference, falls back to CPU if GPU initialization fails, and the
-   camera controller requests CPU after three consecutive inference times over
-   180 ms on the GPU. This does not guarantee a particular frame rate.
-4. The worker returns image landmarks and the exact captured bitmap. The UI uses
-   the bitmap for the skeleton overlay so joints align with their source frame.
-   When a result becomes stale, the overlay clears and the live preview continues.
-5. `formAnalysis.js` validates image-plane points and checks frame freshness before
-   the squat counter and knee-path checks run. Model z and world coordinates are
-   not used. Displayed joint coordinates are image pixels before mirroring.
+A 250 ms confirmation period and 180 ms score smoothing reduce flicker. Color
+filtering does not delay joint positions. Missing, stale or implausible joints
+remain unassessed. Rep counting has its own framing/geometry rules; counter-only
+framing failures do not disable confident posture feedback. Unreliable joint
+geometry still suppresses grading and partial reps are discarded on tracking loss.
 
-## Stability and uncertainty
+## Scope and setup
 
-A usable point needs finite image coordinates inside the frame margins and at
-least 0.75 visibility and, when provided, presence. Large jumps are hidden rather
-than replaced with old or guessed positions. The next raw detection remains the
-comparison reference so tracking can recover after a jump.
+The overlay uses each result's matching source bitmap. The browser validates
+confidence, finite coordinates, frame margins, freshness and jumps before use.
+No model z/world-coordinate values are used. The current automatic counter is
+for squats; other exercises remain preview/manual counting.
 
-Results older than 180 ms, non-increasing frame timestamps, long frame gaps,
-missing joints and implausible geometry pause or reset the relevant analysis.
-Partial rep cycles are discarded when tracking resets; completed visible reps
-remain. The pipeline does not smooth uncertain joints into apparently valid ones.
-Model confidence is not proof of joint-position accuracy.
+Run `npm ci`, then `npm run dev` in `frontend/`. Initial model preparation needs
+network access; runtime/model assets are checksum-verified/prepared by the
+existing dev/build hooks and stay out of Git. Camera access requires localhost
+or HTTPS. Account set saving uses the existing connected application services.
 
-## Squat counting and colors
+Captured diagnostic exports, test fixtures, recordings and experimental files
+are excluded from this feature branch's published change. Real-camera accuracy,
+physical motion-to-display latency and cross-device behavior remain to be
+validated. Direction-specific backward lean, depth, full 3D angles and complete
+exercise-form correctness are not established by these front-view checks.
 
-`SquatAnalysis` learns a standing reference and follows standing, descending,
-bending and returning to standing. A rep requires a sustained bend and hip drop,
-a minimum cycle duration and a sustained return near standing height. Manual
-Count Rep and Undo remain available. A counted rep is an observed movement cycle,
-not a certification of squat depth or technique.
+## Demo behavior when assessment pauses
 
-`FrontalSquatFeedback` checks both visible legs and front-view geometry separately
-from counting. It learns ordinary standing knee paths, compares subsequent inward
-movement relative to foot spacing, and requires a stable candidate for 250 ms
-before coloring each assessed leg segment. A changed stance requires a fresh
-standing reference. Prototype margins remain subject to real-camera validation.
+Gray/white means unassessed, not correct or incorrect form. Very deep projected
+positions can make hip-to-knee geometry unsuitable even while the model reports
+high confidence. Foreshortened or implausible limb geometry, unavailable joints,
+a changed viewpoint, stale results and brief re-confirmation can also pause
+colors. The feedback text distinguishes unavailable joints from unassessable
+projection/geometry. Calibration stays saved; return upright with the full body
+visible to recover. Do not force uncertain frames red or reuse old scores.
 
-- Green: no inward knee drift observed within this limited check.
-- Red: possible inward knee drift; a prompt asks the user to track with their foot.
-- Gray: unassessed, borderline or uncertain; it does not mean bad form.
+## Front-view movement counting
 
-Standing reference frames can be gray while tracking works normally. Missing
-bilateral joints can pause colors while the counter still has a usable leg.
-Push-up, pull-up and sit-up selections currently provide skeleton preview and
-manual counting only in this workflow. The older push-up analysis helper is not
-invoked by the browser camera.
+Rep counting learns its own standing hip height and projected limb lengths from
+fresh upright frames, matching the established WebcamProcessing counter. T-pose
+calibration is used for form colors, not to seed the counter's standing reference.
+This prevents a shifted calibration reference from trapping an upright person in
+`need_standing`. After tracking loss, unfinished cycles are discarded and the
+counter learns a fresh standing reference while form calibration stays saved.
+Lower-body tracking loss clears that reference. Shoulder/torso changes alone
+do not reset a usable leg cycle.
 
-## Save sets
+The angular movement path remains available: confirmed standing at 160 degrees
+or more, descent below 145 degrees with hip drop, a sustained bend at 125 degrees
+or less with at least 15% relative hip drop, then a confirmed return.
 
-Save Completed Set adds the visible count to session history, resets the analysis
-for the next set and attempts the existing account log request. An account error
-leaves the session entry visible. This browser flow does not create the legacy
-backend's per-rep movement JSON files. Diagnostic recording, export and debug
-panels are excluded from this teammate build; camera frames and joint arrays are
-used transiently for tracking, not collected into diagnostic reports.
+The front-view counting path also accepts sustained, scale-corrected hip-to-ankle
+shortening of at least 20% of standing projected leg length, with thigh length
+at most 85% of standing and ankle displacement at most 10% of standing leg
+length. Hip width compensates uniform image scaling; relative hip-to-ankle height
+rejects whole-image translation. This path needs usable hips for scale and does
+not require the projected knee to bend to 125 degrees. Both paths retain 120 ms
+confirmation, a 700 ms minimum cycle and the independent-leg duplicate guard.
+These are prototype movement heuristics, not metric depth or a full form grade.
 
-## Missing pose runtime at startup
+Hands can be clasped in front after the calibration countdown. Shoulders, elbows
+and wrists are not required for the lower-body counter; upper-body uncertainty
+still pauses the relevant form feedback. Torso tilt alone cannot satisfy the hip
+and leg movement requirements. Confidence, jumps and implausible lower-body
+geometry still reject unreliable observations.
 
-`npm run dev` runs asset preparation but does not install dependencies. After
-pulling this branch, run `npm ci` inside `frontend/` before starting it. An error
-about `@mediapipe/tasks-vision` or `vision_bundle.mjs` usually means the checkout's
-dependencies were not installed or are incomplete. Run `npm ci` again to repair
-that installation; do not manually copy the package or change the model path.
-The asset script resolves the installed package through Node, including hoisted
-installations, and prints the installation command when the runtime is missing.
+Live feedback uses short cues such as “Uneven shoulders”, “Leaning sideways”,
+“Keep feet shoulder-width apart” and “Alignment on track”. The legend retains
+the visible-alignment scope and neutral-color explanation.
 
-## Scope for Demo Day
+## Independent leg cycles
 
-The deliverable prioritizes responsive joint tracking and explicit uncertainty.
-It does not estimate calibrated distance in meters, validate anatomical 3D joint
-angles, measure squat depth or assess complete form. Broader exercise feedback,
-metric-depth validation and cross-device/real-camera form validation remain
-outstanding. ONNX inference and mandatory T-pose calibration are outside the
-amended scope.
+Each leg owns its own live standing reference, confidence/geometry checks and
+standing-to-bend-to-standing cycle. Losing one leg clears only its partial cycle;
+a usable opposite leg can continue. Global stale frames and full lower-body tracking loss
+still require fresh standing acquisition. Shoulder/torso changes no longer reset
+a visible leg cycle.
+
+One coordinator emits a single rep event. After a completion, returns from cycles
+that started before that event are ignored, preventing delayed opposite-leg
+returns from double counting. Partial cycles from different legs are never
+combined. No fixed preferred side or mid-cycle transfer of standing references
+is used. The existing angular path and cycle timing remain; the front-view alternative
+uses the additional projection checks described above.
+
+Both checkers use the same detected frame and validated image-plane points. A
+jump on one leg no longer resets the healthy leg's counter. Unreliable leg
+geometry/jumps still pause form coloring without consuming a valid completed
+rep. Red alignment feedback can accompany a completed movement; colors are not
+a condition for counting a rep. Viewpoint limits of single-camera 2D angles
+remain; symmetric logic does not guarantee detection at every body rotation.
+
+The public phase/rep/points/metrics result and camera callback remain unchanged.
+Additional per-leg tracking metrics identify which chain completed a cycle.
+
+## Brief projected-thigh pause
+
+After a sustained bend is already confirmed, a continuous thigh contraction
+between 20% and 25% of the standing projected length can retain that leg's cycle
+for at most 150 ms. This requires a stable shin, small frame-to-frame length
+changes and a stable ankle. These frames remain unassessed for form and cannot
+start or complete a rep. Severe, persistent, missing or jumped geometry resets
+the cycle. A rep still requires reliable recovery and the normal standing return.
+Standing reference refresh can account for scale changes without requiring the
+old ankle anchor, so a step before starting does not freeze an outdated reference.
+
+## Recording diagnostics for a teammate
+
+Open Tracking diagnostics below the squat preview. Start the camera, complete
+T-pose calibration and wait for the chime. Press Record 60 seconds, wait for the
+five-second recording countdown, then perform the test sequence. Press Stop
+recording after the last movement, or let the recording finish automatically.
+Download diagnostics saves a JSON file; send that file manually to the teammate
+investigating the issue. Copy saved summary provides a shorter text overview.
+
+The panel is available in development and production builds. It records numeric
+image-plane landmarks, confidence, calibration/counter references, per-leg
+phases and blocking reasons, timing and delivered rep events. No video or audio
+is recorded or uploaded. The saved report freezes at completion, so approaching
+the screen does not overwrite it. Live counting continues after recording stops.
+Download before refreshing or leaving; starting another recording replaces it.
+Camera stop, recalibration or exercise/set changes end an unfinished recording.
+
+Memory is bounded to 60 seconds, 2400 frames and limited feedback/reference
+snapshots. The report names the counting algorithm and revision for comparison.
+Raw recordings, test fixtures and private findings remain excluded from Git.
