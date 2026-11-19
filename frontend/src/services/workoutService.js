@@ -69,10 +69,12 @@ export async function getWorkout(id) {
 function toColumns(w) {
   const title = w.title?.trim() || "Untitled workout";
   const { days, session, meta } = buildPlan({ ...w, title });
+  // A program spans many dated days; a single workout has one.
+  const endDate = days.reduce((last, d) => (d.date > last ? d.date : last), w.scheduledDate);
   return {
     name: title,
     start_date: w.scheduledDate,
-    end_date: w.scheduledDate,
+    end_date: endDate,
     plan_snapshot: days,
     session,
     meta,

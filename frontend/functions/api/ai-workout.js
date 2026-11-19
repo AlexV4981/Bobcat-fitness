@@ -1,4 +1,5 @@
 import {json,failure,bodyObject,limitedText,authorizeAndLimit,generateJson} from '../../server/aiGateway.js';
+import {PROGRAM_SYSTEM,PROGRAM_SCHEMA,programPrompt,normalizeProgram} from '../../server/workoutProgram.js';
 
 const SYSTEM=`You are an experienced strength and conditioning coach. Return ONLY JSON,
 without markdown fences, describing one safe workout session. Use only the requested equipment.
@@ -26,8 +27,14 @@ export async function onRequestPost({request,env}) {
     notes:limitedText(input.notes,800),
   };
   if(!options.goal||!options.focus||!options.level) return failure('Workout goal, focus and level are required.',400);
+  const isProgram=input.mode==='program';
+  if(isProgram) {
+    options.weeks=Math.min(12,Math.max(2,Math.round(Number(input.weeks)||6)));
+    options.daysPerWeek=Math.min(6,Math.max(2,Math.round(Number(input.daysPerWeek)||3)));
+  }
   const auth=await authorizeAndLimit(request,env,'workout');
   if(auth.response) return auth.response;
+  if(isProgram) return generateProgram(env,options);
   try {
     const r=await generateJson(env,{feature:'workout',system:SYSTEM,prompt:JSON.stringify(options),maxTokens:2600,temperature:0.7});
     if(r.response) return r.response;
@@ -38,6 +45,27 @@ export async function onRequestPost({request,env}) {
     return json(w);
   } catch(e) {
     console.error('AI workout function failed',e?.name||'Error');
+    return failure('Workout assistant is temporarily unavailable.',502);
+  }
+}
+
+// Multi-week program: one request, each training day written once with week-by-week sets/reps.
+async function generateProgram(env,options) {
+  try {
+    const r=await generateJson(env,{
+      feature:'workout',
+      system:PROGRAM_SYSTEM,
+      prompt:programPrompt(options),
+      schema:PROGRAM_SCHEMA,
+      maxTokens:16000,
+      temperature:0.7,
+    });
+    if(r.response) return r.response;
+    const program=normalizeProgram(r.data,options.weeks);
+    if(!program) return failure('The AI returned an incomplete program. Please retry.',502);
+    return json(program);
+  } catch(e) {
+    console.error('AI program function failed',e?.name||'Error');
     return failure('Workout assistant is temporarily unavailable.',502);
   }
 }

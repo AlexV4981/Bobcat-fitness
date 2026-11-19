@@ -56,7 +56,8 @@ export async function authorizeAndLimit(request,env,feature) {
   return {userId:user.id};
 }
 
-export async function generateJson(env,{feature,system,prompt,maxTokens=1800,temperature=0.5}) {
+// `schema` (optional) is a Gemini responseSchema that forces the exact JSON shape.
+export async function generateJson(env,{feature,system,prompt,maxTokens=1800,temperature=0.5,schema=null}) {
   const {apiKey,model}=featureSettings(env,feature);
   if(!apiKey) throw Error('Missing private Gemini secret');
   if(!/^[a-zA-Z0-9._-]{3,80}$/.test(model)) throw Error('Invalid server-side model setting');
@@ -66,7 +67,8 @@ export async function generateJson(env,{feature,system,prompt,maxTokens=1800,tem
     body:JSON.stringify({
       systemInstruction:{parts:[{text:system}]},
       contents:[{role:'user',parts:[{text:prompt}]}],
-      generationConfig:{responseMimeType:'application/json',temperature,maxOutputTokens:maxTokens},
+      generationConfig:{responseMimeType:'application/json',temperature,maxOutputTokens:maxTokens,
+        ...(schema?{responseSchema:schema}:{})},
     }),
   });
   if(!resp.ok) {

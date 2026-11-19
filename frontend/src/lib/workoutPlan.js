@@ -13,6 +13,10 @@
  *
  * `session` is the full editable workout. `plan_snapshot` is derived from it on every save.
  * Completion lives only in plan_snapshot[].exercises[].completed.
+ *
+ * Multi-week programs (session.type === "program") use the same row: `session` holds the
+ * program (each training day once, with weekly sets/reps), and `plan_snapshot` gets one
+ * dated day per session (week x day), so the Workouts tab shows every session on its date.
  */
 
 // plan_snapshot is a days array; tolerate the column default ({"days": []}) too.
@@ -58,6 +62,72 @@ export function withIds(session) {
   };
 }
 
+// ----------------------------- multi-week programs -----------------------------
+
+export const isProgram = (w) => w?.type === "program";
+
+// Program exercises need stable ids too (same reason as withIds).
+export function withProgramIds(program) {
+  return {
+    ...program,
+    days: program.days.map((d) => ({
+      ...d,
+      blocks: d.blocks.map((b) => ({
+        ...b,
+        exercises: b.exercises.map((e) => ({ ...e, id: e.id ?? newId() })),
+      })),
+    })),
+  };
+}
+
+// One exercise appears in every week, so each week's copy gets its own id for completion.
+export const instanceId = (exerciseId, week) => `${exerciseId}~w${week + 1}`;
+
+// Spread training days across the week (offsets in days from the start of each week).
+const DAY_OFFSETS = { 1: [0], 2: [0, 3], 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 3, 4], 6: [0, 1, 2, 3, 4, 5] };
+
+export function sessionDate(startDate, week, day, daysPerWeek) {
+  const offsets = DAY_OFFSETS[daysPerWeek] ?? [0, 1, 2, 3, 4, 5, 6];
+  return addDays(startDate, week * 7 + (offsets[day] ?? day));
+}
+
+// plan_snapshot days for a program: one dated day per session, in date order.
+export function programPlanDays(p) {
+  const done = new Set(p.done ?? []);
+  const days = [];
+  for (let w = 0; w < p.weeks; w++) {
+    p.days.forEach((day, d) => {
+      days.push({
+        date: sessionDate(p.scheduledDate, w, d, p.days.length),
+        label: `Week ${w + 1} · ${day.name}`,
+        exercises: day.blocks.flatMap((b) =>
+          b.exercises.map((e) => {
+            const id = instanceId(e.id, w);
+            const rx = e.weekly[w] ?? e.weekly[e.weekly.length - 1];
+            return {
+              id,
+              name: e.name,
+              sets: b.rounds > 1 ? b.rounds : rx.sets,
+              reps: rx.reps,
+              completed: done.has(id),
+            };
+          }),
+        ),
+      });
+    });
+  }
+  return days;
+}
+
+// Returns an error message, or "" when the program can be saved. Programs aren't edited
+// field by field, so only the parts the user can change are checked.
+export function validateProgram(p) {
+  if (!p.title?.trim()) return "Give the program a title.";
+  if (!p.scheduledDate) return "Pick a start date for the program.";
+  if (!p.days?.length) return "This program has no training days.";
+  return "";
+}
+
 const GOAL_META = [
   { match: /strength/i, category: "Strength & Power", icon: "🏋️‍♂️" },
   { match: /hypertrophy|muscle/i, category: "Hypertrophy", icon: "💪" },
@@ -70,6 +140,7 @@ const DEFAULT_META = { category: "General Fitness", icon: "🏃" };
 // ----------------------------- working copy -> DB -----------------------------
 
 export function buildPlan(w) {
+  if (isProgram(w)) return buildProgramPlan(w);
   const done = new Set(w.done ?? []);
   const exercises = w.blocks.flatMap((b) =>
     b.exercises.map((e) => ({
@@ -102,6 +173,31 @@ export function buildPlan(w) {
       category: look.category,
       icon: look.icon,
       subtitle: [`${w.durationMin} min`, options?.focus].filter(Boolean).join(" · "),
+    },
+  };
+}
+
+function buildProgramPlan(p) {
+  const options = p.meta?.options ?? null;
+  const look = GOAL_META.find((g) => g.match.test(options?.goal ?? "")) ?? DEFAULT_META;
+  return {
+    days: programPlanDays(p),
+    session: {
+      type: "program",
+      title: p.title,
+      summary: p.summary,
+      intensity: p.intensity,
+      progression: p.progression,
+      weeks: p.weeks,
+      weekNotes: p.weekNotes,
+      days: p.days,
+    },
+    meta: {
+      source: "ai",
+      options,
+      category: look.category,
+      icon: look.icon,
+      subtitle: `${p.weeks} weeks · ${p.days.length} days/week`,
     },
   };
 }
@@ -165,6 +261,17 @@ export function workoutFromRow(row) {
     .flatMap((d) => d.exercises ?? [])
     .filter((e) => e.completed)
     .map((e) => e.id);
+
+  if (isProgram(session)) {
+    return {
+      ...withProgramIds(session),
+      id: row.id,
+      createdAt: Date.parse(row.created_at),
+      scheduledDate: row.start_date,
+      done,
+      meta: row.meta ?? {},
+    };
+  }
 
   return {
     ...withIds(session),
