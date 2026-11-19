@@ -22,6 +22,7 @@
   color: var(--ws-ink);
   padding: 24px;
   box-sizing: border-box;
+  max-width: 100%;
 }
 
 .ws-page * {
@@ -54,7 +55,7 @@
 
 .ws-header-title {
   color: var(--ws-ink);
-  font-size: 26px;
+  font-size: clamp(22px, 4vw, 26px);
   font-weight: 700;
   margin: 4px 0 0;
   letter-spacing: -0.01em;
@@ -70,15 +71,17 @@
 
 .ws-dashboard-layout {
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
   gap: 28px;
   max-width: 1400px;
   margin: 0 auto;
 }
 
 @media (max-width: 960px) {
-  .ws-dashboard-layout {
-    grid-template-columns: 1fr;
+  .ws-dashboard-layout,
+  .ws-dashboard-layout--mobile {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
   }
 }
 
@@ -90,7 +93,7 @@
 
 @media (max-width: 860px) {
   .ws-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -99,6 +102,7 @@
   border: 1px solid var(--ws-border);
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  min-width: 0;
 }
 
 /* ---------- AI Coach Panel (Left) ---------- */
@@ -106,6 +110,7 @@
 .ws-ai-section {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .ws-ai-card {
@@ -119,6 +124,7 @@
   flex: 1;
   padding: 16px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -155,6 +161,7 @@
   border-radius: 12px;
   font-size: 13.5px;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .ws-chat-ai .ws-chat-text {
@@ -173,22 +180,23 @@
   padding: 12px 14px;
   border-top: 1px solid var(--ws-border);
   display: flex;
-  align-items: center; /* Centers input and send button vertically */
+  align-items: center;
   gap: 10px;
   background: var(--ws-surface);
 }
 
 .ws-chat-form input {
   flex: 1;
-  height: 40px; /* Fixed height for clean alignment */
+  min-width: 0;
+  height: 40px;
   border: 1px solid var(--ws-border);
   border-radius: 8px;
-  padding: 0 14px;
-  font-size: 13.5px;
-  line-height: 40px; /* Aligns cursor & text perfectly in center */
+  padding: 0 12px;
+  font-size: 14px;
+  line-height: 40px;
   outline: none;
-  background: #ffffff !important; /* Force solid white background */
-  color: var(--ws-ink) !important; /* Force dark visible text color */
+  background: #ffffff !important;
+  color: var(--ws-ink) !important;
   box-sizing: border-box;
 }
 
@@ -203,11 +211,11 @@
 }
 
 .ws-send-btn {
-  height: 40px; /* Matches input height */
+  height: 40px;
   background: var(--ws-hero-bg);
   color: var(--ws-accent);
   border: none;
-  padding: 0 18px;
+  padding: 0 16px;
   border-radius: 8px;
   font-weight: 700;
   font-size: 13px;
@@ -216,6 +224,7 @@
   align-items: center;
   justify-content: center;
   transition: opacity 0.2s;
+  flex-shrink: 0;
 }
 
 .ws-send-btn:hover {
@@ -227,15 +236,17 @@
 .ws-presets-section {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .ws-presets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 20px;
-  max-height: 520px; /* Keeps grid matching the height of AI Card */
-  overflow-y: auto;  /* Allows scrolling through multiple added presets */
-  padding-right: 6px; /* Smooth padding for scrollbar */
+  max-height: 520px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px;
 }
 
 .ws-preset-card {
@@ -249,6 +260,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-width: 0;
 }
 
 .ws-preset-card:hover {
@@ -262,6 +274,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
+  gap: 8px;
 }
 
 .ws-preset-icon {
@@ -272,6 +285,7 @@
   display: grid;
   place-items: center;
   font-size: 22px;
+  flex-shrink: 0;
 }
 
 .ws-preset-category {
@@ -388,7 +402,7 @@
   text-decoration: underline;
 }
 
-/* ---------- Progress Chart (Original Styles Preserved) ---------- */
+/* ---------- Progress Chart ---------- */
 
 .ws-chart-card {
   padding: 24px 20px 12px;
@@ -398,6 +412,8 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 4px;
 }
 
@@ -424,6 +440,7 @@
   display: flex;
   gap: 16px;
   padding: 4px 4px 16px;
+  flex-wrap: wrap;
 }
 
 .ws-legend-item {
@@ -478,6 +495,7 @@
   padding: 20px 20px 8px;
   max-height: 560px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .ws-exercises-title {
@@ -502,10 +520,12 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: 8px;
   padding: 6px 4px;
   position: sticky;
   top: 0;
   background: var(--ws-surface);
+  z-index: 2;
 }
 
 .ws-day-label {
@@ -538,8 +558,8 @@
 
 .ws-check {
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 6px;
   border: 2px solid var(--ws-grey-line);
   background: transparent;
@@ -589,7 +609,7 @@
 
 .ws-status {
   flex-shrink: 0;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   border-radius: 999px;
   padding: 3px 9px;
@@ -615,9 +635,6 @@
   color: #3F403A;
 }
 
-
-
-
 /* ---------- Workout CRUD: options, empty/error states ---------- */
 
 .ws-preset-top-actions {
@@ -638,6 +655,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .ws-open-btn {
@@ -680,7 +698,6 @@
   color: #fff;
 }
 
-
 /* ---------- Starter kit ---------- */
 
 .ws-section-head {
@@ -710,7 +727,6 @@
   flex-wrap: wrap;
 }
 
-/* The plan name is the card's real (keyboard-reachable) button; it looks like plain heading text. */
 .ws-preset-open {
   background: none;
   border: 0;
@@ -829,7 +845,6 @@
   color: #2e4d10;
 }
 
-
 /* ---------- Header actions + day-by-day editor ---------- */
 
 .ws-section-actions {
@@ -838,12 +853,11 @@
   flex-wrap: wrap;
 }
 
-/* Fixed-height panel: bar on top, scrolling body below. The page never changes height while editing. */
 .ws-editor {
   display: flex;
   flex-direction: column;
-  height: min(560px, calc(100vh - 140px));
-  min-height: 380px;
+  height: min(560px, calc(100dvh - 140px));
+  min-height: 360px;
   min-width: 0;
   overflow: hidden;
 }
@@ -866,6 +880,7 @@
 .ws-editor-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .ws-editor-error {
@@ -879,6 +894,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: 16px 20px 20px;
   display: flex;
@@ -917,9 +933,9 @@
   outline-offset: 1px;
 }
 
-.ws-input--date { width: auto; flex: 0 0 auto; }
+.ws-input--date { width: auto; max-width: 100%; flex: 0 1 auto; }
 .ws-input--num  { width: 62px; flex: 0 0 auto; text-align: center; }
-.ws-input--reps { width: 92px; flex: 0 0 auto; }
+.ws-input--reps { width: 92px; flex: 1 1 84px; }
 
 .ws-editor-day {
   border: 1px solid var(--ws-border);
@@ -936,13 +952,14 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .ws-editor-dayhead > .ws-input:first-child {
   font-weight: 700;
+  flex: 1 1 160px;
 }
 
-/* The exercise "box": press anywhere on it that isn't a field and slide it up or down. */
 .ws-editor-list {
   display: flex;
   flex-direction: column;
@@ -988,7 +1005,7 @@
   background: transparent;
   color: #9a9b92;
   cursor: grab;
-  touch-action: none; /* lets touch users drag by the grip without scrolling the panel */
+  touch-action: none;
 }
 
 .ws-grip:hover { background: #f3f3ef; color: var(--ws-muted-strong); }
@@ -999,14 +1016,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .ws-times { color: var(--ws-muted); }
 .ws-ex-remove { margin-left: auto; }
 
 .ws-icon-btn {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   display: grid;
   place-items: center;
@@ -1038,6 +1056,49 @@
 .ws-add-btn:hover { border-color: var(--ws-green); background: #f6f9f1; }
 .ws-add-day { padding: 9px 16px; font-size: 14px; }
 
-@media (max-width: 560px) {
-  .ws-editor-dayhead { flex-wrap: wrap; }
+/* ---------- Mobile Layout Overrides ---------- */
+
+@media (max-width: 768px) {
+  .ws-page {
+    padding: 16px 14px 36px;
+  }
+
+  .ws-header {
+    margin-bottom: 16px;
+  }
+
+  .ws-ai-card {
+    height: min(400px, 56dvh);
+    min-height: 300px;
+  }
+
+  .ws-presets-grid {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
+    gap: 14px;
+  }
+
+  .ws-exercises {
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .ws-chart-area {
+    height: 260px;
+  }
+
+  .ws-editor {
+    height: auto;
+    max-height: 75dvh;
+  }
+
+  .ws-section-actions {
+    width: 100%;
+  }
+
+  .ws-section-actions .ws-open-btn {
+    flex: 1 1 auto;
+  }
 }
