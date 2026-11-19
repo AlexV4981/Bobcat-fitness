@@ -1,6 +1,6 @@
 # Bobcat Fitness — Private Gemini AI on Cloudflare Pages
 
-**Status:** This implementation is staged only on `deploy/cloudflare-pages-class-demo`. Production `main` and the live `bobcat-fitness.pages.dev` deployment will not receive these changes until someone merges the branch content into `main`. No PR created.
+**Status:** This implementation is staged only on `AV-TFCRT-66-Maintenance-Online-Hosting`. Production `main` and the live `bobcat-fitness.pages.dev` deployment will not receive these changes until someone merges the branch content into `main`. No PR created.
 
 ## Why the previous application could not safely use a shared key
 
@@ -20,24 +20,21 @@
 
 ## Exact authenticated steps (the user must do these, not Codex)
 
-### 1. Create a Gemini API key
+### 1. Prepare your two Gemini API keys
 
 1. Visit https://aistudio.google.com/apikey and sign into your own Google account.
-2. Create or select a project and issue a Gemini API key. Restrict a standard key to the Generative Language API; new AI Studio auth keys are normally restricted by default.
+2. Create or select a project and issue your two Gemini API keys, one for diet and one for workouts. Restrict a standard key to the Generative Language API; new AI Studio auth keys are normally restricted by default.
 3. Check your project's actual rate limits and billing tier. Use a conservative free tier if appropriate and configure project spend caps if billing is enabled.
 4. Never post the key in ChatGPT, commit it, or put it in any variable starting with `VITE_`.
 
-### 2. Save the key as an encrypted Cloudflare Pages Function secret
+### 2. Save the keys as encrypted Cloudflare Pages Function secret
 
 1. Open https://dash.cloudflare.com/ -> **Workers & Pages** -> **bobcat-fitness**.
 2. Go to **Settings -> Variables and Secrets** (or the equivalent environment-variable section).
-3. Select **Production** and add:
-   - Name: `GEMINI_API_KEY`
-   - Value: your real Gemini key
-   - **Encrypt: ON** (a secret, not plaintext).
-4. Add a normal **server-side** variable:
-   - Name: `GEMINI_MODEL`
-   - Value: `gemini-3.5-flash-lite` (or another text model supported by your key's project).
+3. Select **Production**, then confirm the following are present with their real values:
+   - `DIETING_KEY`: **Secret**, your AI Dieting Gemini key.
+   - `WORKOUT_KEY`: **Secret**, your AI Workout Gemini key.
+4. Model selection: existing `VITE_MODEL=gemini-2.5-flash` is supported as a model-name fallback; this is **not** a key. Optional server-only `DIETING_MODEL` and `WORKOUT_MODEL` override it independently, with `GEMINI_MODEL` as a shared fallback. If none are set, `gemini-2.5-flash` is used by default.
 5. Keep the existing public Supabase settings:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
@@ -61,7 +58,7 @@ The demo gateway enforces about **six attempts per signed-in user per day**, plu
 
 The live Pages project has `main` set as its production branch, correctly. This security implementation is **not** on `main` yet.
 
-- First, test a **preview deployment** of `deploy/cloudflare-pages-class-demo`; ensure Cloudflare preview builds are enabled, preview secret/binding are configured, and the Functions deploy.
+- First, test a **preview deployment** of `AV-TFCRT-66-Maintenance-Online-Hosting`; ensure Cloudflare preview builds are enabled, preview secret/binding are configured, and the Functions deploy.
 - Once tested and with your team's agreement, merge the changes into `main` yourself or by your normal teammate workflow. **No automatic merge and no PR have been created on your behalf.**
 - Cloudflare will automatically build and publish the new `main` commit. No laptop server or new Cloudflare project is needed.
 
@@ -81,3 +78,11 @@ The live Pages project has `main` set as its production branch, correctly. This 
 - Users must sign in. To support **guest AI usage** safely, add Cloudflare Turnstile verification plus server-side per-IP and global quotas, then test abuse controls before enabling it. **Do not bypass authentication just to make guest testing easy.**
 - The older Python backend can still be needed for other legacy API routes; this work replaces only the two identified AI generation calls.
 - Google rate limits are model- and project-specific; a model identifier can return a 404 or a quota error despite successful Pages deployment. Verify the selected model in Google AI Studio.
+
+## Tested variable names for this branch
+
+- AI Diet endpoint: `DIETING_KEY` (encrypted Cloudflare Pages secret).
+- AI Workout endpoint: `WORKOUT_KEY` (encrypted Cloudflare Pages secret).
+- Model: `DIETING_MODEL` or `WORKOUT_MODEL`, else `GEMINI_MODEL`, else existing `VITE_MODEL`, else `gemini-2.5-flash`.
+- **Also required for both:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and a **KV namespace bound as `AI_RATE_LIMITS`**. The Function returns 503 when its required secret or KV binding is missing.
+- Encrypted secrets must be configured on the **Cloudflare Pages project** and in the appropriate **Production/Preview** environment, not a separate Workers project. Cloudflare variable edits do not change the old frontend UI; only deploying the new GitHub code does.
