@@ -1,6 +1,10 @@
 /* Camera page. Uses the shared tokens and .card / .page-header classes from
    HomePage.css. The video stage stays dark on purpose: it's a camera view. */
 
+.cam {
+  max-width: 100%;
+}
+
 .cam .page-header-title {
   color: var(--ink);
   font-family: "Space Grotesk", sans-serif;
@@ -8,7 +12,7 @@
 
 .cam-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr);
   gap: 20px;
   align-items: start;
 }
@@ -98,6 +102,7 @@
 
 .cam-select {
   width: 100%;
+  min-width: 0;
   font: inherit;
   font-size: 14px;
   font-weight: 500;
@@ -126,7 +131,7 @@
 .cam-counter-number {
   margin: 4px 0;
   font-family: "Space Grotesk", sans-serif;
-  font-size: 48px;
+  font-size: clamp(36px, 9vw, 48px);
   font-weight: 700;
   line-height: 1.1;
   color: var(--ink);
@@ -147,6 +152,7 @@
   cursor: pointer;
   border: 1px solid transparent;
   transition: background-color 0.15s ease, border-color 0.15s ease;
+  min-height: 44px;
 }
 
 .cam-btn:hover:not(:disabled) {
@@ -276,7 +282,7 @@
 /* ---------- Camera bridge ---------- */
 
 .cam .camera-card {
-  margin: 0;                      /* the .cam-video wrapper already provides the frame */
+  margin: 0;
   background: transparent;
   border: none;
   border-radius: 0;
@@ -314,6 +320,6 @@
 @media (max-width: 480px) {
   .cam-tracker { padding: 16px; }
   .cam-actions { flex-wrap: wrap; }
-  .cam-actions .cam-btn { flex: 1 1 100px; }
+  .cam-actions .cam-btn { flex: 1 1 120px; }
   .cam-history-item { flex-wrap: wrap; }
 }
