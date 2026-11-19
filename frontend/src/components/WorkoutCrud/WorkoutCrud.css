@@ -1,0 +1,98 @@
+/* Shared by the Workouts tab and the AI Workout page. Self-contained (wom-* / wcd-*). */
+
+.wom { position: relative; display: inline-flex; }
+
+.wom-trigger {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #55564f;
+  cursor: pointer;
+}
+.wom-trigger:hover,
+.wom-trigger[aria-expanded="true"] { background: rgba(0, 0, 0, 0.06); }
+.wom-trigger:focus-visible { outline: 2px solid #768e5b; outline-offset: 2px; }
+
+.wom--dark .wom-trigger { color: #f4f6ee; border-color: rgba(244, 246, 238, 0.35); width: 40px; height: 40px; }
+.wom--dark .wom-trigger:hover,
+.wom--dark .wom-trigger[aria-expanded="true"] { background: rgba(244, 246, 238, 0.12); }
+.wom--dark .wom-trigger:focus-visible { outline-color: #dbb15b; }
+
+.wom-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 150px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #e4e4de;
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+}
+
+.wom-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #0f100e;
+  font: 600 14px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}
+.wom-item:hover,
+.wom-item:focus-visible { background: #f3f3ef; outline: none; }
+.wom-item--danger { color: #b3261e; }
+.wom-item--danger:hover,
+.wom-item--danger:focus-visible { background: #fdecea; }
+
+/* ---------- Confirm dialog ---------- */
+.wcd-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(20, 16, 14, 0.5);
+}
+.wcd {
+  width: min(420px, 100%);
+  background: #fff;
+  color: #0f100e;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+.wcd h2 { margin: 0 0 8px; font-size: 18px; line-height: 1.3; overflow-wrap: anywhere; }
+.wcd p { margin: 0; color: #55564f; font-size: 14.5px; line-height: 1.5; }
+.wcd .wcd-error { margin-top: 12px; color: #b3261e; font-weight: 600; }
+.wcd-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.wcd-btn {
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid #d8d8d1;
+  background: #fff;
+  color: #0f100e;
+  font: 600 14px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}
+.wcd-btn:hover:not(:disabled) { background: #f3f3ef; }
+.wcd-btn:focus-visible { outline: 2px solid #768e5b; outline-offset: 2px; }
+.wcd-btn:disabled { opacity: 0.6; cursor: progress; }
+.wcd-btn--danger { background: #b3261e; border-color: #b3261e; color: #fff; }
+.wcd-btn--danger:hover:not(:disabled) { background: #971f19; }
+
+.wcd--wide { width: min(560px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; }
+.wcd-btn--primary { background: #471a1a; border-color: #471a1a; color: #dbb15b; }
+.wcd-btn--primary:hover:not(:disabled) { background: #5a2323; }

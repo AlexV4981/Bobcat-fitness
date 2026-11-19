@@ -10,119 +10,14 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
+import WorkoutOptionsMenu from "../components/WorkoutCrud/WorkoutOptionsMenu";
+import ConfirmDialog from "../components/WorkoutCrud/ConfirmDialog";
+import StarterKitDialog from "./StarterKitDialog";
+import PlanEditor from "./PlanEditor";
+import { createStarterWorkouts, deleteWorkout, listWorkouts, setExerciseCompleted, updatePlanDays } from "../services/workoutService";
+import { instantiateStarter, STARTER_PLANS } from "../lib/starterPlans";
+import { cleanPlanDraft, daysOf, draftFromPlan, localToday, toSchedulePlan, validatePlanDraft } from "../lib/workoutPlan";
 import "./WorkoutSchedulePage.css";
-
-// ----------------------------- Preset Workout Categories & Plans -----------------------------
-const INITIAL_PRESET_PLANS = [
-  {
-    id: "strength- foundations",
-    category: "Strength & Power",
-    name: "Strength Foundations — Week 1-4",
-    subtitle: "4-Week Compound Progression",
-    startDate: "2026-09-01",
-    endDate: "2026-09-28",
-    icon: "🏋️‍♂️",
-    status: "Active",
-    days: [
-      {
-        date: "2026-09-01",
-        label: "Push Day",
-        exercises: [
-          { id: "e1", name: "Barbell Bench Press", sets: 4, reps: "6-8", completed: true },
-          { id: "e2", name: "Overhead Press", sets: 3, reps: "8-10", completed: true },
-          { id: "e3", name: "Incline Dumbbell Press", sets: 3, reps: "10-12", completed: true },
-        ],
-      },
-      {
-        date: "2026-09-03",
-        label: "Pull Day",
-        exercises: [
-          { id: "e4", name: "Deadlift", sets: 4, reps: "5", completed: true },
-          { id: "e5", name: "Barbell Row", sets: 3, reps: "8-10", completed: true },
-          { id: "e6", name: "Lat Pulldown", sets: 3, reps: "10-12", completed: false },
-        ],
-      },
-      {
-        date: "2026-09-05",
-        label: "Leg Day",
-        exercises: [
-          { id: "e7", name: "Back Squat", sets: 4, reps: "6-8", completed: true },
-          { id: "e8", name: "Romanian Deadlift", sets: 3, reps: "8-10", completed: false },
-          { id: "e9", name: "Walking Lunge", sets: 3, reps: "12/leg", completed: false },
-        ],
-      },
-      {
-        date: "2026-09-08",
-        label: "Push Day",
-        exercises: [
-          { id: "e10", name: "Barbell Bench Press", sets: 4, reps: "6-8", completed: true },
-          { id: "e11", name: "Arnold Press", sets: 3, reps: "10-12", completed: false },
-          { id: "e12", name: "Cable Fly", sets: 3, reps: "12-15", completed: false },
-        ],
-      },
-      {
-        date: "2026-09-10",
-        label: "Pull Day",
-        exercises: [
-          { id: "e13", name: "Weighted Pull-Up", sets: 4, reps: "6-8", completed: false },
-          { id: "e14", name: "Seated Cable Row", sets: 3, reps: "10-12", completed: false },
-          { id: "e15", name: "Face Pull", sets: 3, reps: "15", completed: false },
-        ],
-      },
-      {
-        date: "2026-09-12",
-        label: "Leg Day",
-        exercises: [
-          { id: "e16", name: "Front Squat", sets: 4, reps: "6-8", completed: false },
-          { id: "e17", name: "Leg Press", sets: 3, reps: "10-12", completed: false },
-          { id: "e18", name: "Calf Raise", sets: 4, reps: "15-20", completed: false },
-        ],
-      },
-    ],
-  },
-  {
-    id: "hypertrophy-upper",
-    category: "Hypertrophy",
-    name: "Upper Body Hypertrophy",
-    subtitle: "High Volume Muscle Building",
-    startDate: "2026-10-01",
-    endDate: "2026-10-28",
-    icon: "💪",
-    status: "In Progress",
-    days: [
-      {
-        date: "2026-10-01",
-        label: "Chest & Biceps",
-        exercises: [
-          { id: "h1", name: "Incline Dumbbell Press", sets: 4, reps: "10-12", completed: true },
-          { id: "h2", name: "Cable Curls", sets: 3, reps: "12-15", completed: true },
-        ],
-      },
-    ],
-  },
-  {
-    id: "cardio-hiit",
-    category: "Cardio & Stamina",
-    name: "HIIT & Core Conditioning",
-    subtitle: "Fat Burn & Athleticism",
-    startDate: "2026-11-01",
-    endDate: "2026-11-14",
-    icon: "🔥",
-    status: "Upcoming",
-    days: [],
-  },
-  {
-    id: "endurance-5k",
-    category: "Endurance",
-    name: "5K Speed & Base Build",
-    subtitle: "Aerobic Running Progression",
-    startDate: "2026-12-01",
-    endDate: "2026-12-31",
-    icon: "🏃‍♂️",
-    status: "Upcoming",
-    days: [],
-  },
-];
 
 const CHART_COLORS = {
   green: "#768e5b",
@@ -134,12 +29,6 @@ const CHART_COLORS = {
 };
 
 // ----------------------------- Helper Functions -----------------------------
-function localToday() {
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
-
 function toDate(d) {
   return new Date(`${d}T00:00:00`);
 }
@@ -297,9 +186,28 @@ function ExercisePanel({ days, today, onToggle }) {
 }
 
 // ----------------------------- Main Workout Schedule Component -----------------------------
-export default function WorkoutSchedulePage({ today = localToday(), onToggleExercise }) {
-  const [plans, setPlans] = useState(INITIAL_PRESET_PLANS);
+export default function WorkoutSchedulePage({
+  today = localToday(),
+  onToggleExercise,
+  onOpenWorkout, // (id, "view" | "edit") => redirect to the AI Workout page
+  onNavigate,
+  isGuest = false,
+}) {
+  const [rows, setRows] = useState([]); // workouts, database shape
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null); // plan awaiting confirmation
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [editDraft, setEditDraft] = useState(null); // day-by-day edit in progress
+  const [editOriginal, setEditOriginal] = useState("");
+  const [editError, setEditError] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [starterOpen, setStarterOpen] = useState(false);
+  const [addingStarter, setAddingStarter] = useState(false);
+  const [starterError, setStarterError] = useState("");
 
   // AI Chat state
   const [aiPrompt, setAiPrompt] = useState("");
@@ -310,6 +218,20 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
     },
   ]);
 
+  // ---------------- Read ----------------
+  useEffect(() => {
+    let active = true;
+    listWorkouts()
+      .then((r) => active && setRows(r))
+      .catch((err) => active && setLoadError(err.message || "Couldn't load your workouts."))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const plans = useMemo(() => rows.map((r) => toSchedulePlan(r, today)), [rows, today]);
+
   const activePlan = useMemo(
     () => plans.find((p) => p.id === selectedPlanId),
     [plans, selectedPlanId]
@@ -319,31 +241,147 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
   const stats = useMemo(() => planStats(activePlan), [activePlan]);
   const sortedDays = useMemo(() => sortDays(activePlan?.days || []), [activePlan]);
 
-  const handleToggle = (dateStr, exerciseId) => {
-    if (!selectedPlanId) return;
-    let nextCompleted = false;
+  // ---------------- Update: tick an exercise on/off ----------------
+  const handleToggle = async (dateStr, exerciseId) => {
+    const row = rows.find((r) => r.id === selectedPlanId);
+    const exercise = daysOf(row)
+      .find((d) => d.date === dateStr)
+      ?.exercises.find((e) => e.id === exerciseId);
+    if (!exercise) return;
 
-    setPlans((prevPlans) =>
-      prevPlans.map((plan) => {
-        if (plan.id !== selectedPlanId) return plan;
-        return {
-          ...plan,
-          days: plan.days.map((day) => {
-            if (day.date !== dateStr) return day;
-            return {
-              ...day,
-              exercises: day.exercises.map((ex) => {
-                if (ex.id !== exerciseId) return ex;
-                nextCompleted = !ex.completed;
-                return { ...ex, completed: nextCompleted };
-              }),
-            };
-          }),
-        };
-      })
-    );
+    const next = !exercise.completed;
+    const patch = (completed) =>
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id !== row.id
+            ? r
+            : {
+                ...r,
+                plan_snapshot: daysOf(r).map((d) =>
+                  d.date !== dateStr
+                    ? d
+                    : {
+                        ...d,
+                        exercises: d.exercises.map((e) => (e.id === exerciseId ? { ...e, completed } : e)),
+                      }
+                ),
+              }
+        )
+      );
 
-    onToggleExercise?.(dateStr, exerciseId, nextCompleted);
+    setActionError("");
+    patch(next); // optimistic
+    onToggleExercise?.(dateStr, exerciseId, next);
+    try {
+      const updated = await setExerciseCompleted(row, exerciseId, next);
+      setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    } catch (err) {
+      patch(!next);
+      setActionError(err.message || "Couldn't save your progress.");
+    }
+  };
+
+  // ---------------- Edit (redirect) / Delete ----------------
+  // AI-generated workouts (they have a session) are edited on the AI Workout page;
+  // everything else (starter kit, camera runs) is edited right here.
+  const beginEdit = (plan) => {
+    const draft = draftFromPlan(plan);
+    setEditDraft(draft);
+    setEditOriginal(JSON.stringify(draft));
+    setEditError("");
+  };
+  const editPlan = (plan) => {
+    if (plan.editable) return onOpenWorkout?.(plan.id, "edit");
+    setSelectedPlanId(plan.id);
+    beginEdit(plan);
+  };
+  const openPlan = (plan) => onOpenWorkout?.(plan.id, "view");
+
+  const editDirty = Boolean(editDraft) && JSON.stringify(editDraft) !== editOriginal;
+  const cancelEdit = () => {
+    if (editDirty && !window.confirm("Discard your unsaved changes?")) return;
+    setEditDraft(null);
+    setEditError("");
+  };
+  const leaveDetail = () => {
+    if (editDirty && !window.confirm("Discard your unsaved changes?")) return;
+    setEditDraft(null);
+    setEditError("");
+    setSelectedPlanId(null);
+  };
+
+  const saveEdit = async () => {
+    const cleaned = cleanPlanDraft(editDraft);
+    const problem = validatePlanDraft(cleaned);
+    if (problem) return setEditError(problem);
+    const row = rows.find((r) => r.id === editDraft.id);
+    if (!row) return setEditError("That workout no longer exists.");
+
+    setSavingEdit(true);
+    setEditError("");
+    try {
+      const updated = await updatePlanDays(row, cleaned);
+      setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      setEditDraft(null);
+    } catch (err) {
+      setEditError(err.message || "Couldn't save your changes.");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const askDelete = (plan) => {
+    setDeleteError("");
+    setPendingDelete(plan);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await deleteWorkout(pendingDelete.id);
+      setRows((prev) => prev.filter((r) => r.id !== pendingDelete.id));
+      if (selectedPlanId === pendingDelete.id) {
+        setSelectedPlanId(null);
+        setEditDraft(null);
+      }
+      setPendingDelete(null);
+    } catch (err) {
+      setDeleteError(err.message || "Couldn't delete the workout.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const cancelDelete = () => setPendingDelete(null);
+
+  // ---------------- Create: starter kit ----------------
+  const addedStarterIds = useMemo(
+    () => new Set(rows.map((r) => r.meta?.starterId).filter(Boolean)),
+    [rows]
+  );
+  const allStartersAdded = STARTER_PLANS.every((p) => addedStarterIds.has(p.id));
+
+  const openStarter = () => {
+    setStarterError("");
+    setStarterOpen(true);
+  };
+  const closeStarter = () => setStarterOpen(false);
+
+  const addStarters = async (ids) => {
+    setAddingStarter(true);
+    setStarterError("");
+    try {
+      const picked = STARTER_PLANS.filter((p) => ids.includes(p.id)).map((p) => instantiateStarter(p, today));
+      await createStarterWorkouts(picked);
+      setRows(await listWorkouts()); // reload so new plans sort in with the AI-generated ones
+      setStarterOpen(false);
+    } catch (err) {
+      setStarterError(err.message || "Couldn't add the starter plans.");
+    } finally {
+      setAddingStarter(false);
+    }
   };
 
   const handleAiSubmit = (e) => {
@@ -373,16 +411,35 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
       {selectedPlanId && activePlan ? (
         /* ==================== DETAIL VIEW (Burnup Chart & Exercises) ==================== */
         <div className="ws-detail-view">
-          <button className="ws-back-btn" onClick={() => setSelectedPlanId(null)}>
+          <button className="ws-back-btn" onClick={leaveDetail}>
             ← Back to Workout Presets Grid
           </button>
 
-          <header className="ws-header">
-            <div className="ws-header-dates">
-              {formatShort(activePlan.startDate)} – {formatShort(activePlan.endDate)}
+          <header className="ws-header ws-detail-head">
+            <div>
+              <div className="ws-header-dates">
+                {formatShort(activePlan.startDate)} – {formatShort(activePlan.endDate)}
+              </div>
+              <h1 className="ws-header-title">{activePlan.name}</h1>
             </div>
-            <h1 className="ws-header-title">{activePlan.name}</h1>
+            <div className="ws-detail-actions">
+              {activePlan.editable && !editDraft && (
+                <button type="button" className="ws-open-btn" onClick={() => openPlan(activePlan)}>
+                  Open in AI Workout →
+                </button>
+              )}
+              <WorkoutOptionsMenu
+                label={`Options for ${activePlan.name}`}
+                onEdit={editDraft ? undefined : () => editPlan(activePlan)}
+                onDelete={() => askDelete(activePlan)}
+              />
+            </div>
           </header>
+          {actionError && (
+            <p className="ws-error" role="alert">
+              {actionError}
+            </p>
+          )}
 
           <div className="ws-grid">
             {/* LEFT: Burnup Chart */}
@@ -464,7 +521,18 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
             </section>
 
             {/* RIGHT: Exercise Checklist */}
-            <ExercisePanel days={sortedDays} today={today} onToggle={handleToggle} />
+            {editDraft && editDraft.id === activePlan.id ? (
+              <PlanEditor
+                draft={editDraft}
+                onChange={setEditDraft}
+                onSave={saveEdit}
+                onCancel={cancelEdit}
+                saving={savingEdit}
+                error={editError}
+              />
+            ) : (
+              <ExercisePanel days={sortedDays} today={today} onToggle={handleToggle} />
+            )}
           </div>
         </div>
       ) : (
@@ -507,11 +575,53 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
 
           {/* RIGHT: Square Icon Preset Grid */}
           <section className="ws-presets-section">
-            <header className="ws-header">
-              <span className="ws-badge">Presets</span>
-              <h1 className="ws-header-title">Workout Presets</h1>
-              <p className="ws-subtitle">Select a plan preset to view its burnup chart and exercise log.</p>
+            <header className="ws-header ws-section-head">
+              <div>
+                <span className="ws-badge">Workouts</span>
+                <h1 className="ws-header-title">My Workouts</h1>
+                <p className="ws-subtitle">Open a workout to see its progress and exercise log, or use ⋯ to edit or delete it.</p>
+              </div>
+              <div className="ws-section-actions">
+                <button type="button" className="ws-open-btn" onClick={() => onNavigate?.("ai-workout")}>
+                  + AI workout
+                </button>
+                {!isGuest && (
+                  <button type="button" className="ws-open-btn" onClick={openStarter} disabled={allStartersAdded && !loading}>
+                    {allStartersAdded && !loading ? "Starter kit added" : "+ Starter kit"}
+                  </button>
+                )}
+              </div>
             </header>
+
+            {actionError && !selectedPlanId && (
+              <p className="ws-error" role="alert">
+                {actionError}
+              </p>
+            )}
+
+            {plans.length === 0 && (
+              <div className="ws-empty">
+                {loading ? (
+                  <p>Loading your workouts…</p>
+                ) : loadError ? (
+                  <p className="ws-error" role="alert">{loadError}</p>
+                ) : isGuest ? (
+                  <p>Guests can't save workouts. Sign in to build and keep your plans.</p>
+                ) : (
+                  <>
+                    <p>No workouts yet. Build your own with AI, or start from a ready-made plan.</p>
+                    <div className="ws-empty-actions">
+                      <button type="button" className="ws-open-btn" onClick={() => onNavigate?.("ai-workout")}>
+                        Build one with the AI generator →
+                      </button>
+                      <button type="button" className="ws-open-btn ws-open-btn--ghost" onClick={openStarter}>
+                        Browse the starter kit
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="ws-presets-grid">
               {plans.map((plan) => {
@@ -524,14 +634,25 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
                   >
                     <div className="ws-preset-top">
                       <div className="ws-preset-icon">{plan.icon}</div>
-                      <span className={`ws-status-badge ws-status-badge--${plan.status.toLowerCase().replace(" ", "-")}`}>
-                        {plan.status}
-                      </span>
+                      <div className="ws-preset-top-actions">
+                        <span className={`ws-status-badge ws-status-badge--${plan.status.toLowerCase().replace(" ", "-")}`}>
+                          {plan.status}
+                        </span>
+                        <WorkoutOptionsMenu
+                          label={`Options for ${plan.name}`}
+                          onEdit={() => editPlan(plan)}
+                          onDelete={() => askDelete(plan)}
+                        />
+                      </div>
                     </div>
 
                     <div className="ws-preset-body">
                       <span className="ws-preset-category">{plan.category}</span>
-                      <h3 className="ws-preset-name">{plan.name}</h3>
+                      <h3 className="ws-preset-name">
+                        <button type="button" className="ws-preset-open" onClick={() => setSelectedPlanId(plan.id)}>
+                          {plan.name}
+                        </button>
+                      </h3>
                       <p className="ws-preset-sub">{plan.subtitle}</p>
                     </div>
 
@@ -557,6 +678,28 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
           </section>
         </div>
       )}
+
+      {starterOpen && (
+        <StarterKitDialog
+          addedIds={addedStarterIds}
+          busy={addingStarter}
+          error={starterError}
+          onAdd={addStarters}
+          onCancel={closeStarter}
+        />
+      )}
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title={`Delete “${pendingDelete?.name ?? ""}”?`}
+        message="This permanently removes the workout and its progress. It can't be undone."
+        busy={deleting}
+        error={deleteError}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }
+
+

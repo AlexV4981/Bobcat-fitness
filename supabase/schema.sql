@@ -62,6 +62,8 @@ create table public.workout_runs (
   plan_id             uuid,
   status              text not null default 'in_progress',
   completed_at        timestamptz,
+  session             jsonb,
+  meta                jsonb not null default '{}'::jsonb,
   constraint workouts_pkey primary key (id),
   constraint workouts_user_id_fkey foreign key (user_id)
     references public.profiles(id) on delete cascade,
