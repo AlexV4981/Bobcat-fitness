@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Chips from "./Chips.jsx";
-import { ENV_API_KEY } from "../lib/api.js";
 
 const GOALS = [
   { value: "strength", label: "Strength" },
@@ -30,51 +29,70 @@ const EQUIPMENT = [
   { value: "full commercial gym", label: "Full gym" },
 ];
 
-export default function WorkoutForm({ apiKey, onSaveKey, onSubmit, loading, error, children }) {
-  const [keyDraft, setKeyDraft] = useState(apiKey);
-  const [keySaved, setKeySaved] = useState(false);
+const MODES = [
+  { value: "program", label: "Program" },
+  { value: "single", label: "Single workout" },
+];
+
+const DAYS = [2, 3, 4, 5, 6].map((n) => ({ value: n, label: String(n) }));
+
+export default function WorkoutForm({ onSubmit, loading, error, children }) {
   const [goal, setGoal] = useState("strength");
   const [focus, setFocus] = useState("full body");
   const [equipment, setEquipment] = useState(["bodyweight only"]);
   const [duration, setDuration] = useState(45);
   const [level, setLevel] = useState("intermediate");
   const [notes, setNotes] = useState("");
-
-  const saveKey = () => {
-    onSaveKey(keyDraft.trim());
-    setKeySaved(true);
-    setTimeout(() => setKeySaved(false), 1200);
-  };
+  const [mode, setMode] = useState("program");
+  const [weeks, setWeeks] = useState(6);
+  const [daysPerWeek, setDaysPerWeek] = useState(3);
+  const isProgram = mode === "program";
 
   const submit = (e) => {
     e.preventDefault();
-    onSubmit({ apiKey: keyDraft.trim(), goal, focus, equipment, duration, level, notes });
+    onSubmit({
+      mode,
+      goal,
+      focus,
+      equipment,
+      duration,
+      level,
+      notes,
+      weeks,
+      daysPerWeek,
+    });
   };
 
   return (
     <form className="rail" onSubmit={submit}>
-      {!ENV_API_KEY && (
-        <div className="keybox">
-          <label className="lbl" htmlFor="apiKey">API key</label>
-          <input
-            type="password"
-            id="apiKey"
-            placeholder="Paste your key (starts with AIza…)"
-            autoComplete="off"
-            value={keyDraft}
-            onChange={(e) => setKeyDraft(e.target.value)}
-          />
-          <button type="button" className="ghost" onClick={saveKey}>
-            {keySaved ? "Saved" : "Save key"}
-          </button>
-          <small>
-            Saved only in this browser. Get a free key at{" "}
-            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
-              aistudio.google.com/apikey
-            </a>
-            .
-          </small>
-        </div>
+      <fieldset>
+        <legend>What to build</legend>
+        <Chips name="mode" options={MODES} value={mode} onChange={setMode} />
+      </fieldset>
+
+      {isProgram && (
+        <>
+          <fieldset>
+            <legend>Program length</legend>
+            <div className="range-row">
+              <input
+                type="range"
+                id="weeks"
+                min="2"
+                max="12"
+                step="1"
+                value={weeks}
+                onChange={(e) => setWeeks(+e.target.value)}
+              />
+              <output htmlFor="weeks">{weeks} wk</output>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Days per week</legend>
+            <Chips name="days" options={DAYS} value={daysPerWeek} onChange={setDaysPerWeek} />
+          </fieldset>
+        </>
       )}
 
       <fieldset>
@@ -93,7 +111,7 @@ export default function WorkoutForm({ apiKey, onSaveKey, onSubmit, loading, erro
       </fieldset>
 
       <fieldset>
-        <legend>Time</legend>
+        <legend>{isProgram ? "Time per session" : "Time"}</legend>
         <div className="range-row">
           <input
             type="range"
@@ -130,7 +148,7 @@ export default function WorkoutForm({ apiKey, onSaveKey, onSubmit, loading, erro
       {error && <div className="err" role="alert">{error}</div>}
 
       <button className="go" type="submit" disabled={loading}>
-        {loading ? "Building…" : "Build my workout"}
+        {loading ? "Building…" : isProgram ? "Build my program" : "Build my workout"}
       </button>
 
       {children}

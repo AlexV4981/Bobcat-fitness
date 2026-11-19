@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import create_db_and_tables
 from app.routes.camera import router as camera_router
 from app.diet import router as diet_router
+from app.workout import router as workout_router
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -30,6 +31,7 @@ app.add_middleware(
 
 app.include_router(camera_router)
 app.include_router(diet_router)
+app.include_router(workout_router)
 @app.get("/api/health")
 def health_check():
     return {"status": "ok"}

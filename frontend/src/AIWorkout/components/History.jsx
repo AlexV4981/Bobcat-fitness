@@ -6,7 +6,10 @@ export default function History({ items, onPick }) {
       <div className="hist">
         {items.map((w) => (
           <button type="button" key={w.createdAt} onClick={() => onPick(w)}>
-            {w.title}
+            <span className="hist-title">
+              {w.title}
+              {w.type === "program" && <em>{w.weeks} wk</em>}
+            </span>
             <span>{new Date(w.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}</span>
           </button>
         ))}

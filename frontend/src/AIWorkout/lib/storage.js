@@ -8,6 +8,13 @@ export const storage = {
       return fallback;
     }
   },
+  remove(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  },
   set(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
@@ -18,6 +25,6 @@ export const storage = {
 };
 
 export const KEYS = {
-  apiKey: "bf_key",
+  legacyApiKey: "bf_key", // only used to delete keys saved by older versions
   history: "bf_history",
 };
