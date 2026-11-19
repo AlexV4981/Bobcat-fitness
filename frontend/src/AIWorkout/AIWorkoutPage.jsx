@@ -1,9 +1,9 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import WorkoutForm from "./components/WorkoutForm.jsx";
 import WorkoutSheet from "./components/WorkoutSheet.jsx";
 import RestTimer from "./components/RestTimer.jsx";
 import History from "./components/History.jsx";
-import { generateWorkout, ENV_API_KEY } from "./lib/api.js";
+import { generateWorkout } from "./lib/api.js";
 import { storage, KEYS } from "./lib/storage.js";
 import { SAMPLE_WORKOUT } from "./lib/sample.js";
 import "./AIWorkoutPage.css";
@@ -11,7 +11,6 @@ import "./AIWorkoutPage.css";
 const MAX_HISTORY = 10;
 
 export default function AIWorkoutPage() {
-  const [apiKey, setApiKey] = useState(() => ENV_API_KEY || storage.get(KEYS.apiKey, ""));
   const [history, setHistory] = useState(() => storage.get(KEYS.history, []));
   const [workout, setWorkout] = useState(() => history[0] || SAMPLE_WORKOUT);
   const [loading, setLoading] = useState(false);
@@ -30,25 +29,18 @@ export default function AIWorkoutPage() {
     persistHistory([w, ...history.filter((x) => x.createdAt !== w.createdAt)].slice(0, MAX_HISTORY));
   };
 
-  const saveKey = (key) => {
-    setApiKey(key);
-    storage.set(KEYS.apiKey, key);
-  };
+  // Remove any API key previously stored by the old browser-direct implementation.
+  useEffect(() => {
+    try {localStorage.removeItem(KEYS.apiKey);} catch { /* storage can be disabled */ }
+  }, []);
 
   const build = async (opts) => {
     setError("");
-    const key = ENV_API_KEY || opts.apiKey;
-    if (!key) {
-      setError("Add your API key at the top first.");
-      document.getElementById("apiKey")?.focus();
-      return;
-    }
-    if (!ENV_API_KEY && key !== apiKey) saveKey(key);
     lastOptions.current = opts;
 
     setLoading(true);
     try {
-      const w = await generateWorkout(key, opts);
+      const w = await generateWorkout(opts);
       const full = { ...w, createdAt: Date.now(), done: [] };
       setWorkout(full);
       upsert(full);
@@ -82,7 +74,7 @@ export default function AIWorkoutPage() {
       </header>
 
       <div className="wrap">
-        <WorkoutForm apiKey={apiKey} onSaveKey={saveKey} onSubmit={build} loading={loading} error={error}>
+        <WorkoutForm onSubmit={build} loading={loading} error={error}>
           <History items={history} onPick={setWorkout} />
         </WorkoutForm>
 
