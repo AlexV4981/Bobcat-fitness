@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - deploy/cloudflare-pages-class-demo
+      - AV-TFCRT-66-Maintenance-Online-Hosting
     paths:
       - 'frontend/**'
       - '.github/workflows/cloudflare-pages-build.yml'
