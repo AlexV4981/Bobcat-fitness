@@ -30,6 +30,12 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install locked dependencies
         run: npm ci
+      - name: Test server-side AI gateway
+        run: node --test server/aiGateway.test.js
+      - name: Check serverless handler syntax
+        run: |
+          node --check functions/api/ai-diet.js
+          node --check functions/api/ai-workout.js
       - name: Build React and prepare MediaPipe assets
         run: npm run build
       - name: Verify critical static files exist
