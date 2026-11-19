@@ -12,17 +12,27 @@ export async function bodyObject(request,maxBytes=12000) {
 }
 export function limitedText(value,max) {return typeof value==='string'?value.trim().slice(0,max):'';}
 
+// Each AI feature uses its OWN server-side Gemini secret: DIETING_KEY or WORKOUT_KEY.
+// No API key is ever sent to the browser.
+export function featureSettings(env,feature) {
+  if(feature!=='diet' && feature!=='workout') throw new Error('Unsupported AI feature');
+  const apiKey=feature==='diet'?env.DIETING_KEY:env.WORKOUT_KEY;
+  const model=(feature==='diet'?env.DIETING_MODEL:env.WORKOUT_MODEL)||env.GEMINI_MODEL||env.VITE_MODEL||'gemini-2.5-flash';
+  return {apiKey,model};
+}
+
 // Users must authenticate before making calls that consume someone else's Gemini quota.
 // Cloudflare KV is a small, best-effort daily usage brake; its eventual consistency does
 // not provide a strict globally atomic quota. Keep an upstream Gemini project quota too.
-export async function authorizeAndLimit(request,env) {
+export async function authorizeAndLimit(request,env,feature) {
   const origin=request.headers.get('origin');
   if(origin && origin!==new URL(request.url).origin) return {response:failure('Cross-origin requests are not permitted.',403)};
   const bearer=request.headers.get('authorization')||'';
   if(!/^Bearer [^\s]+$/i.test(bearer)) return {response:failure('Sign in to use AI features. Guest camera mode is still available.',401)};
   const url=env.VITE_SUPABASE_URL;
   const key=env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if(!url || !key || !env.GEMINI_API_KEY || !env.AI_RATE_LIMITS) {
+  const selected=featureSettings(env,feature);
+  if(!url || !key || !selected.apiKey || !env.AI_RATE_LIMITS) {
     return {response:failure('AI service configuration is not complete.',503)};
   }
   let user;
@@ -46,12 +56,13 @@ export async function authorizeAndLimit(request,env) {
   return {userId:user.id};
 }
 
-export async function generateJson(env,{system,prompt,maxTokens=1800,temperature=0.5}) {
-  const model=env.GEMINI_MODEL||'gemini-3.5-flash-lite';
+export async function generateJson(env,{feature,system,prompt,maxTokens=1800,temperature=0.5}) {
+  const {apiKey,model}=featureSettings(env,feature);
+  if(!apiKey) throw Error('Missing private Gemini secret');
   if(!/^[a-zA-Z0-9._-]{3,80}$/.test(model)) throw Error('Invalid server-side model setting');
   const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
+    headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
     body:JSON.stringify({
       systemInstruction:{parts:[{text:system}]},
       contents:[{role:'user',parts:[{text:prompt}]}],
