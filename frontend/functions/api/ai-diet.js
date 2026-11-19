@@ -18,7 +18,7 @@ export async function onRequestPost({request,env}) {
   const fitness_goal=limitedText(body.fitness_goal,120);
   const workout_plan=limitedText(body.workout_plan,2000);
   if(!fitness_goal||!workout_plan) return failure('A fitness goal and a message are required.',400);
-  const auth=await authorizeAndLimit(request,env);
+  const auth=await authorizeAndLimit(request,env,'diet');
   if(auth.response) return auth.response;
   try {
     const prompt=JSON.stringify({
@@ -27,7 +27,7 @@ export async function onRequestPost({request,env}) {
       current_dpo:body.current_dpo && typeof body.current_dpo==='object'?
         JSON.stringify(body.current_dpo).slice(0,2500):null,
     });
-    const r=await generateJson(env,{system:SYSTEM,prompt,maxTokens:3200,temperature:0.5});
+    const r=await generateJson(env,{feature:'diet',system:SYSTEM,prompt,maxTokens:3200,temperature:0.5});
     if(r.response) return r.response;
     if(typeof r.data?.ai_response!=='string') return failure('The AI returned an incomplete nutrition response.',502);
     const dpo=r.data.updated_dpo;
