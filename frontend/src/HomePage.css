@@ -26,10 +26,8 @@
 
 .home {
   display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
-  min-height: 100dvh;
-  width: 100%;
-  max-width: 100%;
+  grid-template-columns: 84px 1fr;
+  min-height: 100vh;
   background: var(--bg);
   color: var(--ink);
   font-family: "Inter", system-ui, sans-serif;
@@ -39,7 +37,7 @@
   box-sizing: border-box;
 }
 
-/* ---------- Sidebar (Desktop Default) ---------- */
+/* ---------- Sidebar ---------- */
 
 .sidebar {
   background: var(--hero-bg);
@@ -48,11 +46,11 @@
   align-items: center;
   padding: 24px 0;
   gap: 28px;
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-  align-self: start;
-  z-index: 30;
+
+  position: sticky;   /* new */
+  top: 0;             /* new */
+  height: 100vh;      /* new */
+  align-self: start;  /* new */
 }
 
 .sidebar-brand {
@@ -77,7 +75,6 @@
   font-weight: 700;
   font-size: 13px;
   font-family: "Space Grotesk", sans-serif;
-  flex-shrink: 0;
 }
 
 .sidebar-nav {
@@ -111,7 +108,6 @@
 .sidebar-nav-item.is-active {
   background: var(--accent);
   color: var(--accent-ink);
-  font-weight: 600;
 }
 
 .sidebar-nav-icon svg {
@@ -126,7 +122,6 @@
   font-size: 12px;
   text-align: center;
   line-height: 1.4;
-  flex-shrink: 0;
 }
 
 .sidebar-streak-count {
@@ -143,7 +138,7 @@
   padding: 36px 40px 56px;
   max-width: 1280px;
   width: 100%;
-  min-width: 0;
+  min-width: 0;   /* lets the 1fr column shrink instead of overflowing */
 }
 
 .page-header {
@@ -152,7 +147,6 @@
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 24px;
-  flex-wrap: wrap;
 }
 
 .page-header-date {
@@ -174,8 +168,8 @@
 }
 
 .page-header-title {
-  color: var(--ink);
-  font-size: clamp(24px, 4vw, 28px);
+  color: var(--ws-ink);
+  font-size: 28px;
   font-weight: 700;
   margin: 4px 0 0;
   letter-spacing: -0.01em;
@@ -222,7 +216,6 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  min-width: 0;
 }
 
 .card {
@@ -231,14 +224,12 @@
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow-card);
-  min-width: 0;
 }
 
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
   margin-bottom: 16px;
 }
 
@@ -290,7 +281,7 @@
 
 .hero-title {
   font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(24px, 4vw, 30px);
+  font-size: 30px;
   font-weight: 600;
   margin: 0 0 8px;
 }
@@ -324,17 +315,16 @@
 
 .week-strip {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(7, 1fr);
   gap: 8px;
 }
 
 .week-day {
   background: #1A2115;
   border-radius: var(--radius-sm);
-  padding: 12px 4px;
+  padding: 12px 6px;
   text-align: center;
   position: relative;
-  min-width: 0;
 }
 
 .week-day-label {
@@ -349,7 +339,7 @@
 .week-day-date {
   display: block;
   font-family: "Space Grotesk", sans-serif;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
 }
 
@@ -373,7 +363,7 @@
 .week-day-check {
   position: absolute;
   top: 6px;
-  right: 6px;
+  right: 8px;
   color: var(--accent);
   font-size: 11px;
 }
@@ -426,7 +416,7 @@
 
 .macro-row {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) 60px;
+  grid-template-columns: 56px 1fr 60px;
   align-items: center;
   gap: 12px;
   font-size: 13px;
@@ -505,7 +495,7 @@
 
 .glance-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
@@ -697,100 +687,53 @@
   margin-top: 6px;
 }
 
-/* ---------- Responsive & Mobile Mode ---------- */
+/* ---------- Responsive ---------- */
 
 @media (max-width: 1080px) {
   .grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 720px) {
   .home {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
-
-  .sidebar,
-  .sidebar--mobile {
-    position: sticky;
-    top: 0;
-    height: auto;
-    width: 100%;
+  .sidebar {
     flex-direction: row;
-    align-items: center;
     justify-content: space-between;
-    padding: 10px 14px;
-    gap: 10px;
+    padding: 14px 20px;
   }
-
-  .sidebar-avatar {
-    width: 34px;
-    height: 34px;
-    font-size: 12px;
-  }
-
   .sidebar-nav {
     flex-direction: row;
     width: auto;
-    flex: 1;
-    min-width: 0;
     padding: 0;
-    gap: 6px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;   /* new */
+    flex: 1;            /* new */
+    min-width: 0;       /* new */
   }
-
-  .sidebar-nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .sidebar-nav-item {
+  .sidebar-nav-item {   /* new rule */
     flex: 0 0 auto;
-    flex-direction: row;
-    gap: 6px;
-    padding: 8px 12px;
-    font-size: 12px;
-    white-space: nowrap;
+    padding: 8px 10px;
   }
-
-  .sidebar-nav-icon svg {
-    width: 16px;
-    height: 16px;
-  }
-
   .sidebar-streak {
     margin-top: 0;
-    font-size: 10px;
-    line-height: 1.15;
-    padding-left: 4px;
   }
-
-  .sidebar-streak-count {
-    font-size: 14px;
-  }
-
   .content {
-    padding: 20px 16px 40px;
+    padding: 24px 18px 40px;
   }
-
   .page-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
   }
-
+  .page-header-title {
+    font-size: 26px;
+  }
   .glance-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
-
   .macro-row {
-    grid-template-columns: 50px minmax(0, 1fr) 54px;
-  }
-
-  .card {
-    padding: 18px;
+    grid-template-columns: 50px 1fr 54px;
   }
 }
 

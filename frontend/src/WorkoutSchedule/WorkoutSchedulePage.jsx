@@ -17,7 +17,6 @@ import PlanEditor from "./PlanEditor";
 import { createStarterWorkouts, deleteWorkout, listWorkouts, setExerciseCompleted, updatePlanDays } from "../services/workoutService";
 import { instantiateStarter, STARTER_PLANS } from "../lib/starterPlans";
 import { cleanPlanDraft, daysOf, draftFromPlan, localToday, toSchedulePlan, validatePlanDraft } from "../lib/workoutPlan";
-import { useDeviceMode } from "../hooks/useDeviceMode";
 import "./WorkoutSchedulePage.css";
 import { useVoiceDictation } from "../hooks/useVoiceDictation.js";
 
@@ -30,6 +29,7 @@ const CHART_COLORS = {
   grid: "#F0F0EC",
 };
 
+// ----------------------------- Helper Functions -----------------------------
 function toDate(d) {
   return new Date(`${d}T00:00:00`);
 }
@@ -77,6 +77,7 @@ function planStats(plan) {
   return { total, done, pct };
 }
 
+// ----------------------------- Recharts Subcomponents -----------------------------
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
   const completed = payload.find((p) => p.dataKey === "completed")?.value ?? 0;
@@ -102,6 +103,7 @@ function Legend({ swatch, label, dashed }) {
   );
 }
 
+// ----------------------------- Exercise Panel -----------------------------
 const STATUS_TEXT = {
   done: "Done",
   today: "Today",
@@ -184,23 +186,23 @@ function ExercisePanel({ days, today, onToggle }) {
   );
 }
 
+// ----------------------------- Main Workout Schedule Component -----------------------------
 export default function WorkoutSchedulePage({
   today = localToday(),
   onToggleExercise,
-  onOpenWorkout,
+  onOpenWorkout, // (id, "view" | "edit") => redirect to the AI Workout page
   onNavigate,
   isGuest = false,
 }) {
-  const { isMobile } = useDeviceMode();
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState([]); // workouts, database shape
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
   const [selectedPlanId, setSelectedPlanId] = useState(null);
-  const [pendingDelete, setPendingDelete] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null); // plan awaiting confirmation
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-  const [editDraft, setEditDraft] = useState(null);
+  const [editDraft, setEditDraft] = useState(null); // day-by-day edit in progress
   const [editOriginal, setEditOriginal] = useState("");
   const [editError, setEditError] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
@@ -208,6 +210,7 @@ export default function WorkoutSchedulePage({
   const [addingStarter, setAddingStarter] = useState(false);
   const [starterError, setStarterError] = useState("");
 
+  // AI Chat state
   const [aiPrompt, setAiPrompt] = useState("");
   const { isListening, voiceError, toggleVoice } = useVoiceDictation((transcript) => {
     setAiPrompt((previous) => [previous.trim(), transcript].filter(Boolean).join(" "));
@@ -219,6 +222,7 @@ export default function WorkoutSchedulePage({
     },
   ]);
 
+  // ---------------- Read ----------------
   useEffect(() => {
     let active = true;
     listWorkouts()
@@ -241,6 +245,7 @@ export default function WorkoutSchedulePage({
   const stats = useMemo(() => planStats(activePlan), [activePlan]);
   const sortedDays = useMemo(() => sortDays(activePlan?.days || []), [activePlan]);
 
+  // ---------------- Update: tick an exercise on/off ----------------
   const handleToggle = async (dateStr, exerciseId) => {
     const row = rows.find((r) => r.id === selectedPlanId);
     const exercise = daysOf(row)
@@ -269,7 +274,7 @@ export default function WorkoutSchedulePage({
       );
 
     setActionError("");
-    patch(next);
+    patch(next); // optimistic
     onToggleExercise?.(dateStr, exerciseId, next);
     try {
       const updated = await setExerciseCompleted(row, exerciseId, next);
@@ -280,6 +285,9 @@ export default function WorkoutSchedulePage({
     }
   };
 
+  // ---------------- Edit (redirect) / Delete ----------------
+  // AI-generated workouts (they have a session) are edited on the AI Workout page;
+  // everything else (starter kit, camera runs) is edited right here.
   const beginEdit = (plan) => {
     const draft = draftFromPlan(plan);
     setEditDraft(draft);
@@ -352,6 +360,7 @@ export default function WorkoutSchedulePage({
 
   const cancelDelete = () => setPendingDelete(null);
 
+  // ---------------- Create: starter kit ----------------
   const addedStarterIds = useMemo(
     () => new Set(rows.map((r) => r.meta?.starterId).filter(Boolean)),
     [rows]
@@ -370,7 +379,7 @@ export default function WorkoutSchedulePage({
     try {
       const picked = STARTER_PLANS.filter((p) => ids.includes(p.id)).map((p) => instantiateStarter(p, today));
       await createStarterWorkouts(picked);
-      setRows(await listWorkouts());
+      setRows(await listWorkouts()); // reload so new plans sort in with the AI-generated ones
       setStarterOpen(false);
     } catch (err) {
       setStarterError(err.message || "Couldn't add the starter plans.");
@@ -402,10 +411,11 @@ export default function WorkoutSchedulePage({
   const todayLabel = todayIndex >= 0 ? burnupData[todayIndex].dateLabel : null;
 
   return (
-    <div className="ws-page" data-device={isMobile ? "mobile" : "desktop"}>
+    <div className="ws-page">
       {selectedPlanId && activePlan ? (
+        /* ==================== DETAIL VIEW (Burnup Chart & Exercises) ==================== */
         <div className="ws-detail-view">
-          <button type="button" className="ws-back-btn" onClick={leaveDetail}>
+          <button className="ws-back-btn" onClick={leaveDetail}>
             ← Back to Workout Presets Grid
           </button>
 
@@ -436,6 +446,7 @@ export default function WorkoutSchedulePage({
           )}
 
           <div className="ws-grid">
+            {/* LEFT: Burnup Chart */}
             <section className="ws-card ws-chart-card">
               <div className="ws-chart-card-header">
                 <h2 className="ws-card-title">Progress</h2>
@@ -513,6 +524,7 @@ export default function WorkoutSchedulePage({
               </div>
             </section>
 
+            {/* RIGHT: Exercise Checklist */}
             {editDraft && editDraft.id === activePlan.id ? (
               <PlanEditor
                 draft={editDraft}
@@ -528,7 +540,9 @@ export default function WorkoutSchedulePage({
           </div>
         </div>
       ) : (
-        <div className={`ws-dashboard-layout ${isMobile ? "ws-dashboard-layout--mobile" : ""}`}>
+        /* ==================== MAIN MODULAR DASHBOARD (AI Left + Grid Right) ==================== */
+        <div className="ws-dashboard-layout">
+          {/* LEFT: AI Workout Planner */}
           <section className="ws-ai-section">
             <header className="ws-header">
               <span className="ws-badge">AI Assistant</span>
@@ -583,6 +597,7 @@ export default function WorkoutSchedulePage({
             </div>
           </section>
 
+          {/* RIGHT: Square Icon Preset Grid */}
           <section className="ws-presets-section">
             <header className="ws-header ws-section-head">
               <div>
@@ -710,3 +725,5 @@ export default function WorkoutSchedulePage({
     </div>
   );
 }
+
+
