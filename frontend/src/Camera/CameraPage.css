@@ -1,6 +1,11 @@
 /* Camera page. Uses the shared tokens and .card / .page-header classes from
    HomePage.css. The video stage stays dark on purpose: it's a camera view. */
 
+.cam .page-header-title {
+  color: var(--ink);
+  font-family: "Space Grotesk", sans-serif;
+}
+
 .cam-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
@@ -63,9 +68,17 @@
 /* ---------- Tracker panel ---------- */
 
 .cam-tracker {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.cam-tracking-status {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .cam-label {
@@ -129,10 +142,20 @@
   font: inherit;
   font-size: 14px;
   font-weight: 700;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   padding: 12px;
   cursor: pointer;
   border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.cam-btn:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.cam-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .cam-btn--primary {
@@ -153,9 +176,19 @@
   width: 100%;
   padding: 14px;
   background: var(--accent);
-  color: var(--hero-bg);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: var(--accent-ink);
+}
+
+.cam-diet-shortcut {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.cam-btn--recovery {
+  width: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  border-color: var(--border);
 }
 
 .cam-btn:focus-visible,
@@ -176,6 +209,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .cam-history-count {
@@ -189,7 +224,6 @@
   padding: 12px 0;
   text-align: center;
   font-size: 12px;
-  font-style: italic;
   color: var(--ink-soft);
 }
 
@@ -239,7 +273,7 @@
   .cam-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* ---------- Camera panel: maroon + gold to match the site ---------- */
+/* ---------- Camera bridge ---------- */
 
 .cam .camera-card {
   margin: 0;                      /* the .cam-video wrapper already provides the frame */
@@ -247,16 +281,12 @@
   border: none;
   border-radius: 0;
   box-shadow: none;
-  color: #f4ece4;
+  color: var(--ink);
 }
 
-.cam .camera-copy h1 { color: #f4ece4; }
-.cam .camera-copy p:last-child { color: #c9b8a8; }
-.cam .eyebrow { color: var(--accent); }
-
 .cam .camera-stage {
-  background: radial-gradient(circle at 50% 20%, #5a2424, transparent 46%), #1a0a0a;
-  border: 1px solid rgba(219, 177, 91, 0.25);
+  background: radial-gradient(circle at 50% 20%, var(--hero-bg), transparent 70%), var(--hero-bg-2);
+  border-color: var(--hero-bg);
 }
 
 .cam .camera-overlay {
@@ -265,35 +295,25 @@
   border: 1px solid rgba(219, 177, 91, 0.25);
 }
 
-.cam .status-dot { background: #8a7a6a; }
-.cam .status-dot.is-live {
-  background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(219, 177, 91, 0.2);
+.cam .camera-controls .cam-btn {
+  flex: 1 1 140px;
+  min-width: 0;
 }
 
-.cam .camera-button {
-  color: var(--accent-ink);
-  background: var(--accent);
-}
-.cam .camera-button:hover:not(:disabled) { background: #e8c880; }
-
-.cam .camera-button--debug {
-  color: #f4ece4;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(219, 177, 91, 0.35);
-}
-.cam .camera-button--debug:hover:not(:disabled) {
-  background: rgba(219, 177, 91, 0.16);
+.cam .camera-controls .cam-btn[aria-pressed="true"] {
+  background: var(--bg);
+  border-color: var(--hero-bg);
+  color: var(--hero-bg);
 }
 
-.cam .camera-button:focus-visible { outline-color: var(--accent); }
-
+.cam .camera-calibration,
 .cam .camera-error {
-  color: #ffe1da;
-  background: #2b0d0d;
-  border: 1px solid #b4483f;
+  margin: 0;
 }
 
-/* the frame around it */
-.cam-video-bar { color: #c9b8a8; border-bottom-color: rgba(219, 177, 91, 0.18); }
-.cam-video-stage { background: var(--hero-bg-2); }
+@media (max-width: 480px) {
+  .cam-tracker { padding: 16px; }
+  .cam-actions { flex-wrap: wrap; }
+  .cam-actions .cam-btn { flex: 1 1 100px; }
+  .cam-history-item { flex-wrap: wrap; }
+}

@@ -230,7 +230,6 @@ function statusOf(day, exercise, today) {
 
 function ExerciseRow({ day, exercise, today, onToggle }) {
   const status = statusOf(day, exercise, today);
-
   return (
     <li className="ws-exercise-row">
       <button
@@ -251,7 +250,6 @@ function ExerciseRow({ day, exercise, today, onToggle }) {
           </svg>
         )}
       </button>
-
       <div className="ws-exercise-info">
         <div className={`ws-exercise-name ${exercise.completed ? "is-done" : ""}`}>
           {exercise.name}
@@ -260,7 +258,6 @@ function ExerciseRow({ day, exercise, today, onToggle }) {
           {exercise.sets} sets × {exercise.reps}
         </div>
       </div>
-
       <span className={`ws-status ws-status--${status}`}>{STATUS_TEXT[status]}</span>
     </li>
   );
@@ -300,9 +297,28 @@ function ExercisePanel({ days, today, onToggle }) {
 export default function WorkoutSchedulePage({ today = localToday(), onToggleExercise }) {
   const [plans, setPlans] = useState(INITIAL_PRESET_PLANS);
   const [selectedPlanId, setSelectedPlanId] = useState(null);
-
-  // AI Chat state
+   // AI Chat state
   const [aiPrompt, setAiPrompt] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const handleVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Speech Recognition. Try Chrome or Edge.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setAiPrompt((prev) => (prev ? `${prev} ${transcript}` : transcript));
+    };
+    recognition.start();
+  };
+
   const [messages, setMessages] = useState([
     {
       sender: "ai",
@@ -318,11 +334,9 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
   const burnupData = useMemo(() => buildBurnupSeries(activePlan), [activePlan]);
   const stats = useMemo(() => planStats(activePlan), [activePlan]);
   const sortedDays = useMemo(() => sortDays(activePlan?.days || []), [activePlan]);
-
   const handleToggle = (dateStr, exerciseId) => {
     if (!selectedPlanId) return;
     let nextCompleted = false;
-
     setPlans((prevPlans) =>
       prevPlans.map((plan) => {
         if (plan.id !== selectedPlanId) return plan;
@@ -342,18 +356,15 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
         };
       })
     );
-
     onToggleExercise?.(dateStr, exerciseId, nextCompleted);
   };
 
   const handleAiSubmit = (e) => {
     e.preventDefault();
     if (!aiPrompt.trim()) return;
-
     const userMsg = aiPrompt;
     setMessages((prev) => [...prev, { sender: "user", text: userMsg }]);
     setAiPrompt("");
-
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
@@ -367,7 +378,6 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
 
   const todayIndex = burnupData.findIndex((d) => d.date >= today);
   const todayLabel = todayIndex >= 0 ? burnupData[todayIndex].dateLabel : null;
-
   return (
     <div className="ws-page">
       {selectedPlanId && activePlan ? (
@@ -376,14 +386,12 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
           <button className="ws-back-btn" onClick={() => setSelectedPlanId(null)}>
             ← Back to Workout Presets Grid
           </button>
-
           <header className="ws-header">
             <div className="ws-header-dates">
               {formatShort(activePlan.startDate)} – {formatShort(activePlan.endDate)}
             </div>
             <h1 className="ws-header-title">{activePlan.name}</h1>
           </header>
-
           <div className="ws-grid">
             {/* LEFT: Burnup Chart */}
             <section className="ws-card ws-chart-card">
@@ -393,7 +401,6 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
                   {stats.done} / {stats.total} exercises · {stats.pct}%
                 </div>
               </div>
-
               <div className="ws-chart-area">
                 <ResponsiveContainer>
                   <ComposedChart
@@ -456,13 +463,11 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
-
               <div className="ws-legend">
                 <Legend swatch={CHART_COLORS.green} label="Completed" />
                 <Legend swatch={CHART_COLORS.greyLine} dashed label="Scheduled" />
               </div>
             </section>
-
             {/* RIGHT: Exercise Checklist */}
             <ExercisePanel days={sortedDays} today={today} onToggle={handleToggle} />
           </div>
@@ -477,7 +482,6 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
               <h1 className="ws-header-title">AI Planner</h1>
               <p className="ws-subtitle">Consult your coach to structure workout plans & routines.</p>
             </header>
-
             <div className="ws-card ws-ai-card">
               <div className="ws-chat-messages">
                 {messages.map((m, idx) => (
@@ -494,6 +498,23 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
               </div>
 
               <form onSubmit={handleAiSubmit} className="ws-chat-form">
+                <button
+                  type="button"
+                  onClick={handleVoiceInput}
+                  title="Voice input for workout suggestions"
+                  style={{
+                    padding: "0 0.85rem",
+                    height: "40px",
+                    backgroundColor: isListening ? "#e53e3e" : "#edf2f7",
+                    color: isListening ? "#fff" : "#1a202c",
+                    border: "1px solid rgba(0,0,0,0.12)",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
+                >
+                  {isListening ? "🛑" : "🎤"}
+                </button>
                 <input
                   type="text"
                   placeholder="Ask AI for workout suggestions..."
@@ -504,7 +525,6 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
               </form>
             </div>
           </section>
-
           {/* RIGHT: Square Icon Preset Grid */}
           <section className="ws-presets-section">
             <header className="ws-header">
@@ -512,7 +532,6 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
               <h1 className="ws-header-title">Workout Presets</h1>
               <p className="ws-subtitle">Select a plan preset to view its burnup chart and exercise log.</p>
             </header>
-
             <div className="ws-presets-grid">
               {plans.map((plan) => {
                 const s = planStats(plan);
@@ -528,13 +547,11 @@ export default function WorkoutSchedulePage({ today = localToday(), onToggleExer
                         {plan.status}
                       </span>
                     </div>
-
                     <div className="ws-preset-body">
                       <span className="ws-preset-category">{plan.category}</span>
                       <h3 className="ws-preset-name">{plan.name}</h3>
                       <p className="ws-preset-sub">{plan.subtitle}</p>
                     </div>
-
                     <div className="ws-preset-footer">
                       <div className="ws-preset-progress-info">
                         <span>Progress</span>

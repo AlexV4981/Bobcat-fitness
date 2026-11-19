@@ -39,6 +39,25 @@ export default function WorkoutForm({ apiKey, onSaveKey, onSubmit, loading, erro
   const [duration, setDuration] = useState(45);
   const [level, setLevel] = useState("intermediate");
   const [notes, setNotes] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const handleVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Speech Recognition. Try Chrome or Edge.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setNotes((prev) => (prev ? `${prev} ${transcript}` : transcript));
+    };
+    recognition.start();
+  };
 
   const saveKey = () => {
     onSaveKey(keyDraft.trim());
@@ -76,22 +95,18 @@ export default function WorkoutForm({ apiKey, onSaveKey, onSubmit, loading, erro
           </small>
         </div>
       )}
-
       <fieldset>
         <legend>Goal</legend>
         <Chips name="goal" options={GOALS} value={goal} onChange={setGoal} />
       </fieldset>
-
       <fieldset>
         <legend>Focus</legend>
         <Chips name="focus" options={FOCUS} value={focus} onChange={setFocus} />
       </fieldset>
-
       <fieldset>
         <legend>Equipment</legend>
         <Chips name="eq" options={EQUIPMENT} value={equipment} onChange={setEquipment} multiple />
       </fieldset>
-
       <fieldset>
         <legend>Time</legend>
         <div className="range-row">
@@ -107,7 +122,6 @@ export default function WorkoutForm({ apiKey, onSaveKey, onSubmit, loading, erro
           <output htmlFor="duration">{duration} min</output>
         </div>
       </fieldset>
-
       <fieldset>
         <legend>Level</legend>
         <select id="level" value={level} onChange={(e) => setLevel(e.target.value)}>
@@ -116,9 +130,27 @@ export default function WorkoutForm({ apiKey, onSaveKey, onSubmit, loading, erro
           <option value="advanced">Advanced</option>
         </select>
       </fieldset>
-
       <fieldset>
-        <legend>Anything else?</legend>
+        <legend style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+          <span>Anything else?</span>
+          <button
+            type="button"
+            onClick={handleVoiceInput}
+            title="Voice input for workout notes"
+            style={{
+              padding: "0.25rem 0.65rem",
+              backgroundColor: isListening ? "#e53e3e" : "#edf2f7",
+              color: isListening ? "#fff" : "#1a202c",
+              border: "1px solid rgba(0,0,0,0.12)",
+              borderRadius: "6px",
+              fontWeight: "600",
+              cursor: "pointer",
+              fontSize: "0.85rem"
+            }}
+          >
+            {isListening ? "🛑 Listening" : "🎤 Voice"}
+          </button>
+        </legend>
         <textarea
           id="notes"
           placeholder="e.g. sore shoulders, working toward a muscle-up, no jumping (downstairs neighbors)"
@@ -126,13 +158,10 @@ export default function WorkoutForm({ apiKey, onSaveKey, onSubmit, loading, erro
           onChange={(e) => setNotes(e.target.value)}
         />
       </fieldset>
-
       {error && <div className="err" role="alert">{error}</div>}
-
       <button className="go" type="submit" disabled={loading}>
         {loading ? "Building…" : "Build my workout"}
       </button>
-
       {children}
     </form>
   );

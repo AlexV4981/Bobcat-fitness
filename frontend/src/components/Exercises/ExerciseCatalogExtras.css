@@ -1,0 +1,42 @@
+/* Additions for database-backed exercises. Import once, from ExercisesPage.jsx. */
+
+.ex-card-thumb--photo {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+.ex-card-thumb--photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ex-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+.ex-gallery img {
+  display: block;
+  width: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.ex-loadmore {
+  display: block;
+  margin: 1.5rem auto 0;
+}
+
+/* Camera-tracking filter toggle and card badge */
+/* Sits right after the category chips; the dashed edge sets it apart from them. */
+.ex-filter--camera {
+  border-style: dashed;
+}
+.ex-filter--camera[aria-pressed="true"] {
+  border-style: solid;
+}
+.ex-pill--camera {
+  background: var(--tint-blue, #b7d3e4);
+  color: var(--hero-bg, #471a1a);
+}

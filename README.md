@@ -284,6 +284,11 @@ with `.venv` activated:
 uvicorn app.main:app --reload
 ```
 
+Gemini is optional for local development. Without `DIETING_KEY`, `GOOGLE_API_KEY`, or
+`GEMINI_API_KEY`, the diet chat returns a labeled demo response and the backend
+still starts. To force the bypass with a key configured, run
+`GEMINI_BYPASS=true uvicorn app.main:app --reload`.
+
 The backend should start at:
 
 ```text
@@ -622,3 +627,35 @@ If the frontend loads and `/api/health` returns:
 ```
 
 the development environment is ready.
+
+
+## Browser camera tracking
+
+See [how browser tracking works](frontend/src/components/LiveForm/README.md) for
+setup, the frame pipeline, stability rules, workout saving and limitations.
+
+If your terminal is already in `frontend/`, run these as separate commands:
+
+```bash
+npm ci
+npm run dev -- --host 0.0.0.0
+```
+
+From the repository root, run `cd frontend` first. Do not repeat `cd frontend`
+when you are already there. Run `npm ci` after pulling or switching branches
+that change dependencies; `npm run dev` does not install packages. The dev/build scripts prepare
+the pinned pose runtime and model automatically; the first preparation needs
+network access. Keep the normal frontend environment configuration for account
+features. Open Camera, select Squat and press Start camera over HTTPS or localhost.
+
+Face the camera with your full body and both feet visible. Standing normally
+briefly establishes the movement reference; no T-pose, printed markers or Python
+tracking server is required. The current front-view check observes inward knee
+movement. Its colors do not certify squat depth, metric distance or complete form.
+Other exercises currently use preview/manual counting in this browser workflow.
+
+Diagnostic recording/debug tools are excluded from this teammate build.
+Recordings, markers and local experiments must stay out of Git. The pre-existing backend
+camera APIs are retained for compatibility; the browser camera page does not
+send frames to them. Retired ONNX inference, model downloads and calibration
+experiments are not dependencies of this workflow.
