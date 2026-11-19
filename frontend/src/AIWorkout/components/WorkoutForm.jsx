@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Chips from "./Chips.jsx";
-import { ENV_API_KEY } from "../lib/api.js";
 
 const GOALS = [
   { value: "strength", label: "Strength" },
@@ -30,9 +29,7 @@ const EQUIPMENT = [
   { value: "full commercial gym", label: "Full gym" },
 ];
 
-export default function WorkoutForm({ apiKey, onSaveKey, onSubmit, loading, error, children }) {
-  const [keyDraft, setKeyDraft] = useState(apiKey);
-  const [keySaved, setKeySaved] = useState(false);
+export default function WorkoutForm({ onSubmit, loading, error, children }) {
   const [goal, setGoal] = useState("strength");
   const [focus, setFocus] = useState("full body");
   const [equipment, setEquipment] = useState(["bodyweight only"]);
@@ -40,43 +37,13 @@ export default function WorkoutForm({ apiKey, onSaveKey, onSubmit, loading, erro
   const [level, setLevel] = useState("intermediate");
   const [notes, setNotes] = useState("");
 
-  const saveKey = () => {
-    onSaveKey(keyDraft.trim());
-    setKeySaved(true);
-    setTimeout(() => setKeySaved(false), 1200);
-  };
-
   const submit = (e) => {
     e.preventDefault();
-    onSubmit({ apiKey: keyDraft.trim(), goal, focus, equipment, duration, level, notes });
+    onSubmit({ goal, focus, equipment, duration, level, notes });
   };
 
   return (
     <form className="rail" onSubmit={submit}>
-      {!ENV_API_KEY && (
-        <div className="keybox">
-          <label className="lbl" htmlFor="apiKey">API key</label>
-          <input
-            type="password"
-            id="apiKey"
-            placeholder="Paste your key (starts with AIza…)"
-            autoComplete="off"
-            value={keyDraft}
-            onChange={(e) => setKeyDraft(e.target.value)}
-          />
-          <button type="button" className="ghost" onClick={saveKey}>
-            {keySaved ? "Saved" : "Save key"}
-          </button>
-          <small>
-            Saved only in this browser. Get a free key at{" "}
-            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
-              aistudio.google.com/apikey
-            </a>
-            .
-          </small>
-        </div>
-      )}
-
       <fieldset>
         <legend>Goal</legend>
         <Chips name="goal" options={GOALS} value={goal} onChange={setGoal} />

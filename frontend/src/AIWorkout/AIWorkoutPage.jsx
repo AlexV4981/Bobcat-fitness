@@ -4,8 +4,8 @@ import WorkoutSheet from "./components/WorkoutSheet.jsx";
 import RestTimer from "./components/RestTimer.jsx";
 import History from "./components/History.jsx";
 import ConfirmDialog from "../components/WorkoutCrud/ConfirmDialog.jsx";
-import { generateWorkout, ENV_API_KEY } from "./lib/api.js";
-import { storage, KEYS } from "./lib/storage.js";
+import { generateWorkout } from "./lib/api.js";
+import { KEYS } from "./lib/storage.js";
 import { SAMPLE_WORKOUT } from "./lib/sample.js";
 import {
   createWorkout,
@@ -31,10 +31,9 @@ const SAMPLE = withIds(SAMPLE_WORKOUT);
  *
  * Props:
  *   intent    { id, mode: "view" | "edit" } when the Workouts tab redirected here
- *   isGuest   guests can generate but can't save (no database access)
+ *   isGuest   guests can view sample; sign-in required for AI generation and saving
  */
 export default function AIWorkoutPage({ intent = null, isGuest = false }) {
-  const [apiKey, setApiKey] = useState(() => ENV_API_KEY || storage.get(KEYS.apiKey, ""));
   const [rows, setRows] = useState([]); // saved workouts, database shape
   const [listError, setListError] = useState("");
   const [workout, setWorkout] = useState(SAMPLE); // the working copy shown on the right
@@ -55,10 +54,11 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
 
   const confirmDiscard = () => !dirty || window.confirm("You have unsaved changes. Discard them?");
 
-  const saveKey = (key) => {
-    setApiKey(key);
-    storage.set(KEYS.apiKey, key);
-  };
+  // Delete any Gemini key saved by the old browser-direct integration.
+  // New AI generation uses the authenticated Cloudflare Functions instead.
+  useEffect(() => {
+    try { localStorage.removeItem(KEYS.apiKey); } catch { /* storage might be disabled */ }
+  }, []);
 
   // Show a workout in view or edit mode, discarding whatever was on screen.
   const open = useCallback((w, nextMode = "view") => {
@@ -113,22 +113,16 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
   // ---------------- Create (generate a draft) ----------------
   const build = async (opts, { replace = false } = {}) => {
     setError("");
-    const key = ENV_API_KEY || opts.apiKey || apiKey;
-    if (!key) {
-      setError("Add your API key at the top first.");
-      document.getElementById("apiKey")?.focus();
-      return;
-    }
     if (!confirmDiscard()) return;
-    if (!ENV_API_KEY && key !== apiKey) saveKey(key);
 
-    const { apiKey: _omit, ...options } = opts; // never store the key with the workout
-    lastOptions.current = { ...options, apiKey: key };
+    // Store only workout options. Never collect or forward a Gemini key.
+    const options = opts;
+    lastOptions.current = options;
 
     setLoading(true);
     setMessage(null);
     try {
-      const generated = withIds(await generateWorkout(key, opts));
+      const generated = withIds(await generateWorkout(options));
       setWorkout((prev) =>
         replace && !prev.isSample
           ? // Regenerate: same workout (same row), new contents
@@ -264,8 +258,8 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
       </header>
 
       <div className="wrap">
-        <WorkoutForm apiKey={apiKey} onSaveKey={saveKey} onSubmit={build} loading={loading} error={error}>
-          {isGuest && <p className="hint">Guests can build workouts but can't save them. Sign in to save and edit.</p>}
+        <WorkoutForm onSubmit={build} loading={loading} error={error}>
+          {isGuest && <p className="hint">Sign in to generate AI workouts and save your workout plans.</p>}
           {listError && (
             <div className="err" role="alert">
               {listError}

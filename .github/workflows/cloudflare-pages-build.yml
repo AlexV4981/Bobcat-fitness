@@ -1,0 +1,57 @@
+name: Cloudflare Pages frontend build check
+
+on:
+  push:
+    branches:
+      - main
+      - AV-TFCRT-66-Maintenance-Online-Hosting
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/cloudflare-pages-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Test server-side AI gateway
+        run: node --test server/aiGateway.test.js
+      - name: Check serverless handler syntax
+        run: |
+          node --check functions/api/ai-diet.js
+          node --check functions/api/ai-workout.js
+      - name: Build React and prepare MediaPipe assets
+        run: npm run build
+      - name: Verify critical static files exist
+        run: |
+          test -s dist/index.html
+          test -s dist/pose-worker.js
+          test -s dist/pose/vision_bundle.mjs
+          test -s dist/pose/pose_landmarker_full.task
+          find dist/pose/wasm -maxdepth 1 -type f -name '*.wasm' | grep -q .
+          echo 'Frontend build and pose assets present.'
+      - name: Check Pages single-file upload limit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          oversized=[(str(p),p.stat().st_size) for p in Path("dist").rglob("*") if p.is_file() and p.stat().st_size>25*1024*1024]
+          if oversized:
+              raise SystemExit(f"Cloudflare Pages file limit exceeded: {oversized}")
+          print("All generated files at or below 25 MiB.")
+          PY
