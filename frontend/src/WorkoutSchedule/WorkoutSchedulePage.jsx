@@ -18,6 +18,7 @@ import { createStarterWorkouts, deleteWorkout, listWorkouts, setExerciseComplete
 import { instantiateStarter, STARTER_PLANS } from "../lib/starterPlans";
 import { cleanPlanDraft, daysOf, draftFromPlan, localToday, toSchedulePlan, validatePlanDraft } from "../lib/workoutPlan";
 import "./WorkoutSchedulePage.css";
+import { useVoiceDictation } from "../hooks/useVoiceDictation.js";
 
 const CHART_COLORS = {
   green: "#768e5b",
@@ -211,6 +212,9 @@ export default function WorkoutSchedulePage({
 
   // AI Chat state
   const [aiPrompt, setAiPrompt] = useState("");
+  const { isListening, voiceError, toggleVoice } = useVoiceDictation((transcript) => {
+    setAiPrompt((previous) => [previous.trim(), transcript].filter(Boolean).join(" "));
+  });
   const [messages, setMessages] = useState([
     {
       sender: "ai",
@@ -562,6 +566,25 @@ export default function WorkoutSchedulePage({
               </div>
 
               <form onSubmit={handleAiSubmit} className="ws-chat-form">
+                <button
+                  type="button"
+                  onClick={toggleVoice}
+                  title={isListening ? "Stop voice input" : "Voice input for workout suggestions"}
+                  aria-label={isListening ? "Stop voice input for workout suggestions" : "Start voice input for workout suggestions"}
+                  aria-pressed={isListening}
+                  style={{
+                    padding: "0 0.85rem",
+                    height: "40px",
+                    backgroundColor: isListening ? "#e53e3e" : "#edf2f7",
+                    color: isListening ? "#fff" : "#1a202c",
+                    border: "1px solid rgba(0,0,0,0.12)",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  {isListening ? "🛑" : "🎤"}
+                </button>
                 <input
                   type="text"
                   placeholder="Ask AI for workout suggestions..."
@@ -570,6 +593,7 @@ export default function WorkoutSchedulePage({
                 />
                 <button type="submit" className="ws-send-btn">Send</button>
               </form>
+              {voiceError && <p className="ws-error" role="alert">{voiceError}</p>}
             </div>
           </section>
 

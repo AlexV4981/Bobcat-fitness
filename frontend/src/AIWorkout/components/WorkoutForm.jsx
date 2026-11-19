@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Chips from "./Chips.jsx";
+import { useVoiceDictation } from "../../hooks/useVoiceDictation.js";
 
 const GOALS = [
   { value: "strength", label: "Strength" },
@@ -36,6 +37,9 @@ export default function WorkoutForm({ onSubmit, loading, error, children }) {
   const [duration, setDuration] = useState(45);
   const [level, setLevel] = useState("intermediate");
   const [notes, setNotes] = useState("");
+  const { isListening, voiceError, toggleVoice } = useVoiceDictation((transcript) => {
+    setNotes((previous) => [previous.trim(), transcript].filter(Boolean).join(" "));
+  });
 
   const submit = (e) => {
     e.preventDefault();
@@ -85,13 +89,35 @@ export default function WorkoutForm({ onSubmit, loading, error, children }) {
       </fieldset>
 
       <fieldset>
-        <legend>Anything else?</legend>
+        <legend style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+          <span>Anything else?</span>
+          <button
+            type="button"
+            onClick={toggleVoice}
+            title={isListening ? "Stop voice input" : "Voice input for workout notes"}
+            aria-label={isListening ? "Stop voice input for workout notes" : "Start voice input for workout notes"}
+            aria-pressed={isListening}
+            style={{
+              padding: "0.25rem 0.65rem",
+              backgroundColor: isListening ? "#e53e3e" : "#edf2f7",
+              color: isListening ? "#fff" : "#1a202c",
+              border: "1px solid rgba(0,0,0,0.12)",
+              borderRadius: "6px",
+              fontWeight: "600",
+              cursor: "pointer",
+              fontSize: "0.85rem",
+            }}
+          >
+            {isListening ? "🛑 Listening" : "🎤 Voice"}
+          </button>
+        </legend>
         <textarea
           id="notes"
           placeholder="e.g. sore shoulders, working toward a muscle-up, no jumping (downstairs neighbors)"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
+        {voiceError && <small role="alert" style={{ color: "#b91c1c" }}>{voiceError}</small>}
       </fieldset>
 
       {error && <div className="err" role="alert">{error}</div>}
