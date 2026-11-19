@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import WorkoutForm from "./components/WorkoutForm.jsx";
 import WorkoutSheet from "./components/WorkoutSheet.jsx";
+import ProgramSheet from "./components/ProgramSheet.jsx";
 import RestTimer from "./components/RestTimer.jsx";
 import History from "./components/History.jsx";
 import ConfirmDialog from "../components/WorkoutCrud/ConfirmDialog.jsx";
-import { generateWorkout } from "./lib/api.js";
+import { generateProgram, generateWorkout } from "./lib/api.js";
 import { KEYS } from "./lib/storage.js";
-import { SAMPLE_WORKOUT } from "./lib/sample.js";
+import { SAMPLE_PROGRAM } from "./lib/sample.js";
 import {
   createWorkout,
   deleteWorkout,
@@ -15,10 +16,20 @@ import {
   setExerciseCompleted,
   updateWorkout,
 } from "../services/workoutService.js";
-import { cleanWorkout, localToday, validateWorkout, withIds, workoutFromRow } from "../lib/workoutPlan.js";
+import {
+  cleanWorkout,
+  isProgram,
+  localToday,
+  validateProgram,
+  validateWorkout,
+  withIds,
+  withProgramIds,
+  workoutFromRow,
+} from "../lib/workoutPlan.js";
 import "./AIWorkoutPage.css";
 
-const SAMPLE = withIds(SAMPLE_WORKOUT);
+// The page opens on an example program; the form can build programs or single workouts.
+const SAMPLE = withProgramIds(SAMPLE_PROGRAM);
 
 /**
  * AI Workout page = Create + Update (and Read/Delete of the open workout).
@@ -28,6 +39,10 @@ const SAMPLE = withIds(SAMPLE_WORKOUT);
  *   Update   Edit (options menu) turns the sheet into an editor; Regenerate refills a saved workout.
  *            Both leave unsaved changes until "Save changes".
  *   Delete   options menu -> confirm -> row removed.
+ *
+ * Multi-week programs (workout.type === "program") use the same flow and the same table:
+ * build -> save -> check off -> regenerate/delete. They are shown by ProgramSheet and can't be
+ * opened in the field editor (their sets/reps change week by week).
  *
  * Props:
  *   intent    { id, mode: "view" | "edit" } when the Workouts tab redirected here
@@ -47,6 +62,9 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [restEnd, setRestEnd] = useState(null);
+  // Bumped whenever a different workout/program is shown, so the program view resets to the
+  // next session then, but not when the same program is saved or checked off.
+  const [viewKey, setViewKey] = useState(0);
   const lastOptions = useRef(null);
   const editBackup = useRef(null);
 
@@ -63,6 +81,7 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
   // Show a workout in view or edit mode, discarding whatever was on screen.
   const open = useCallback((w, nextMode = "view") => {
     setWorkout(w);
+    setViewKey((k) => k + 1);
     setDirty(false);
     setMode(nextMode);
     editBackup.current = nextMode === "edit" ? { workout: w, dirty: false } : null;
@@ -97,7 +116,8 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
             text: "That workout wasn't made with the AI generator, so it can't be opened here.",
           });
         }
-        open(w, intent.mode === "edit" ? "edit" : "view");
+        // Programs have no field editor yet, so they always open in view mode.
+        open(w, intent.mode === "edit" && !isProgram(w) ? "edit" : "view");
       })
       .catch((err) => active && setMessage({ type: "err", text: err.message || "Couldn't open that workout." }));
     return () => {
@@ -122,13 +142,17 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
     setLoading(true);
     setMessage(null);
     try {
-      const generated = withIds(await generateWorkout(options));
+      const generated =
+        options.mode === "program"
+          ? withProgramIds(await generateProgram(options))
+          : withIds(await generateWorkout(options));
       setWorkout((prev) =>
         replace && !prev.isSample
           ? // Regenerate: same workout (same row), new contents
             { ...generated, id: prev.id, createdAt: prev.createdAt, scheduledDate: prev.scheduledDate, done: [], meta: { ...prev.meta, options } }
           : { ...generated, createdAt: Date.now(), scheduledDate: localToday(), done: [], meta: { options } },
       );
+      setViewKey((k) => k + 1);
       setDirty(true);
       setMode("view");
       if (window.innerWidth < 860) document.querySelector(".sheet")?.scrollIntoView({ behavior: "smooth" });
@@ -168,8 +192,9 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
       setMessage({ type: "err", text: "Sign in with an account to save workouts." });
       return;
     }
-    const cleaned = cleanWorkout(workout);
-    const problem = validateWorkout(cleaned);
+    const program = isProgram(workout);
+    const cleaned = program ? { ...workout, title: (workout.title ?? "").trim() } : cleanWorkout(workout);
+    const problem = program ? validateProgram(cleaned) : validateWorkout(cleaned);
     if (problem) {
       setMessage({ type: "err", text: problem });
       return;
@@ -185,7 +210,9 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
       setMode("view");
       setMessage({
         type: "ok",
-        text: wasSaved ? "Changes saved." : "Workout saved. You can find it in the Workouts tab.",
+        text: wasSaved
+          ? "Changes saved."
+          : `${program ? "Program" : "Workout"} saved. You can find it in the Workouts tab.`,
       });
     } catch (err) {
       setMessage({ type: "err", text: err.message || "Couldn't save the workout." });
@@ -246,6 +273,7 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
   const cancelDelete = useCallback(() => setConfirmingDelete(false), []);
 
   const isSaved = Boolean(workout.id);
+  const canRegenerate = Boolean(lastOptions.current);
 
   return (
     <div className="aw">
@@ -253,13 +281,13 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
         <p className="eyebrow">
           {new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}
         </p>
-        <h1>Build a workout</h1>
-        <p className="sub">AI workouts built around your gear and your time.</p>
+        <h1>Build a workout plan</h1>
+        <p className="sub">Multi-week programs or single workouts, built around your gear and your time.</p>
       </header>
 
       <div className="wrap">
         <WorkoutForm onSubmit={build} loading={loading} error={error}>
-          {isGuest && <p className="hint">Sign in to generate AI workouts and save your workout plans.</p>}
+          {isGuest && <p className="hint">Sign in to generate AI programs and workouts and save your plans.</p>}
           {listError && (
             <div className="err" role="alert">
               {listError}
@@ -268,23 +296,41 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
           <History items={history} activeId={workout.id} onPick={pick} />
         </WorkoutForm>
 
-        <WorkoutSheet
-          workout={workout}
-          loading={loading}
-          mode={mode}
-          dirty={dirty}
-          saving={saving}
-          message={message}
-          canRegenerate={Boolean(lastOptions.current)}
-          onToggleDone={toggleDone}
-          onRest={startRest}
-          onRegenerate={() => lastOptions.current && build(lastOptions.current, { replace: true })}
-          onChange={handleChange}
-          onEdit={startEdit}
-          onCancelEdit={cancelEdit}
-          onSave={save}
-          onDelete={requestDelete}
-        />
+        {isProgram(workout) ? (
+          <ProgramSheet
+            key={viewKey}
+            program={workout}
+            loading={loading}
+            dirty={dirty}
+            saving={saving}
+            message={message}
+            canRegenerate={canRegenerate}
+            onToggleDone={toggleDone}
+            onRest={startRest}
+            onRegenerate={() => lastOptions.current && build(lastOptions.current, { replace: true })}
+            onChange={handleChange}
+            onSave={save}
+            onDelete={requestDelete}
+          />
+        ) : (
+          <WorkoutSheet
+            workout={workout}
+            loading={loading}
+            mode={mode}
+            dirty={dirty}
+            saving={saving}
+            message={message}
+            canRegenerate={canRegenerate}
+            onToggleDone={toggleDone}
+            onRest={startRest}
+            onRegenerate={() => lastOptions.current && build(lastOptions.current, { replace: true })}
+            onChange={handleChange}
+            onEdit={startEdit}
+            onCancelEdit={cancelEdit}
+            onSave={save}
+            onDelete={requestDelete}
+          />
+        )}
       </div>
 
       <RestTimer
@@ -295,11 +341,11 @@ export default function AIWorkoutPage({ intent = null, isGuest = false }) {
 
       <ConfirmDialog
         open={confirmingDelete}
-        title={isSaved ? `Delete “${workout.title}”?` : "Discard this draft?"}
+        title={isSaved ? `Delete “${workout.title}”?` : `Discard this ${isProgram(workout) ? "program" : "draft"}?`}
         message={
           isSaved
             ? "This permanently removes the workout and its progress. It can't be undone."
-            : "This workout hasn't been saved, so it will be lost."
+            : `This ${isProgram(workout) ? "program" : "workout"} hasn't been saved, so it will be lost.`
         }
         confirmLabel={isSaved ? "Delete" : "Discard"}
         busy={deleting}

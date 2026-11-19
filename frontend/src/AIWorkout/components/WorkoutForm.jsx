@@ -30,6 +30,13 @@ const EQUIPMENT = [
   { value: "full commercial gym", label: "Full gym" },
 ];
 
+const MODES = [
+  { value: "program", label: "Program" },
+  { value: "single", label: "Single workout" },
+];
+
+const DAYS = [2, 3, 4, 5, 6].map((n) => ({ value: n, label: String(n) }));
+
 export default function WorkoutForm({ onSubmit, loading, error, children }) {
   const [goal, setGoal] = useState("strength");
   const [focus, setFocus] = useState("full body");
@@ -37,17 +44,55 @@ export default function WorkoutForm({ onSubmit, loading, error, children }) {
   const [duration, setDuration] = useState(45);
   const [level, setLevel] = useState("intermediate");
   const [notes, setNotes] = useState("");
+  const [mode, setMode] = useState("program");
+  const [weeks, setWeeks] = useState(6);
+  const [daysPerWeek, setDaysPerWeek] = useState(3);
+  const isProgram = mode === "program";
   const { isListening, voiceError, toggleVoice } = useVoiceDictation((transcript) => {
     setNotes((previous) => [previous.trim(), transcript].filter(Boolean).join(" "));
   });
 
   const submit = (e) => {
     e.preventDefault();
-    onSubmit({ goal, focus, equipment, duration, level, notes });
+    onSubmit(
+      isProgram
+        ? { mode, goal, focus, equipment, duration, level, notes, weeks, daysPerWeek }
+        : { mode, goal, focus, equipment, duration, level, notes },
+    );
   };
 
   return (
     <form className="rail" onSubmit={submit}>
+      <fieldset>
+        <legend>What to build</legend>
+        <Chips name="mode" options={MODES} value={mode} onChange={setMode} />
+      </fieldset>
+
+      {isProgram && (
+        <>
+          <fieldset>
+            <legend>Program length</legend>
+            <div className="range-row">
+              <input
+                type="range"
+                id="weeks"
+                min="2"
+                max="12"
+                step="1"
+                value={weeks}
+                onChange={(e) => setWeeks(+e.target.value)}
+              />
+              <output htmlFor="weeks">{weeks} wk</output>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Days per week</legend>
+            <Chips name="days" options={DAYS} value={daysPerWeek} onChange={setDaysPerWeek} />
+          </fieldset>
+        </>
+      )}
+
       <fieldset>
         <legend>Goal</legend>
         <Chips name="goal" options={GOALS} value={goal} onChange={setGoal} />
@@ -64,7 +109,7 @@ export default function WorkoutForm({ onSubmit, loading, error, children }) {
       </fieldset>
 
       <fieldset>
-        <legend>Time</legend>
+        <legend>{isProgram ? "Time per session" : "Time"}</legend>
         <div className="range-row">
           <input
             type="range"
@@ -123,7 +168,7 @@ export default function WorkoutForm({ onSubmit, loading, error, children }) {
       {error && <div className="err" role="alert">{error}</div>}
 
       <button className="go" type="submit" disabled={loading}>
-        {loading ? "Building…" : "Build my workout"}
+        {loading ? "Building…" : isProgram ? "Build my program" : "Build my workout"}
       </button>
 
       {children}

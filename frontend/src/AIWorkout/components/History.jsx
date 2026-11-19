@@ -13,7 +13,10 @@ export default function History({ items, activeId, onPick }) {
             aria-current={w.id === activeId ? "true" : undefined}
             onClick={() => onPick(w)}
           >
-            {w.title}
+            <span className="hist-title">
+              {w.title}
+              {w.type === "program" && <em>{w.weeks} wk</em>}
+            </span>
             <span>
               {new Date(`${w.scheduledDate}T00:00:00`).toLocaleDateString([], { month: "short", day: "numeric" })}
             </span>
