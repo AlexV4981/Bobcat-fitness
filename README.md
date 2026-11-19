@@ -629,33 +629,21 @@ If the frontend loads and `/api/health` returns:
 the development environment is ready.
 
 
-## Browser camera tracking
+## Browser squat alignment feedback
 
-See [how browser tracking works](frontend/src/components/LiveForm/README.md) for
-setup, the frame pipeline, stability rules, workout saving and limitations.
+In `frontend/`, run `npm ci`, then `npm run dev`. Open Camera, select Squat and
+press Start camera. Face the screen and hold both arms out for two seconds,
+then lower them during the five-second countdown and begin at the chime.
+There is no cutout, body-size matching, local Python tracker or ONNX setup.
 
-If your terminal is already in `frontend/`, run these as separate commands:
+The skeleton compares visible knee paths, sideways torso lean and shoulder/hip
+balance with your calibration. Body posture tints all bones; knee deviations
+add severity to the corresponding leg. Color intensity keeps increasing beyond
+the initial red threshold. Gray means unassessed, not good form. These prototype
+checks do not certify a perfect squat, metric depth, anatomical 3D angles or
+independent arm technique. A near-standing torso-projection cue cannot identify
+forward versus backward lean.
 
-```bash
-npm ci
-npm run dev -- --host 0.0.0.0
-```
-
-From the repository root, run `cd frontend` first. Do not repeat `cd frontend`
-when you are already there. Run `npm ci` after pulling or switching branches
-that change dependencies; `npm run dev` does not install packages. The dev/build scripts prepare
-the pinned pose runtime and model automatically; the first preparation needs
-network access. Keep the normal frontend environment configuration for account
-features. Open Camera, select Squat and press Start camera over HTTPS or localhost.
-
-Face the camera with your full body and both feet visible. Standing normally
-briefly establishes the movement reference; no T-pose, printed markers or Python
-tracking server is required. The current front-view check observes inward knee
-movement. Its colors do not certify squat depth, metric distance or complete form.
-Other exercises currently use preview/manual counting in this browser workflow.
-
-Diagnostic recording/debug tools are excluded from this teammate build.
-Recordings, markers and local experiments must stay out of Git. The pre-existing backend
-camera APIs are retained for compatibility; the browser camera page does not
-send frames to them. Retired ONNX inference, model downloads and calibration
-experiments are not dependencies of this workflow.
+See the [browser alignment guide](frontend/src/components/LiveForm/README.md) for
+implementation, setup and limitations. Diagnostic controls, recordings, tests,
+findings, ZIPs and experiments are excluded from this published change.
