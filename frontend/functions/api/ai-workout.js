@@ -26,10 +26,10 @@ export async function onRequestPost({request,env}) {
     notes:limitedText(input.notes,800),
   };
   if(!options.goal||!options.focus||!options.level) return failure('Workout goal, focus and level are required.',400);
-  const auth=await authorizeAndLimit(request,env);
+  const auth=await authorizeAndLimit(request,env,'workout');
   if(auth.response) return auth.response;
   try {
-    const r=await generateJson(env,{system:SYSTEM,prompt:JSON.stringify(options),maxTokens:2600,temperature:0.7});
+    const r=await generateJson(env,{feature:'workout',system:SYSTEM,prompt:JSON.stringify(options),maxTokens:2600,temperature:0.7});
     if(r.response) return r.response;
     const w=r.data;
     if(typeof w?.title!=='string'||!Array.isArray(w.blocks)||!Array.isArray(w.warmup)||!Array.isArray(w.cooldown)) {
