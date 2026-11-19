@@ -36,7 +36,7 @@ test('enforces authenticated per-user daily quota and cooldown',async()=>{
     const request=new Request('https://example.test/api/ai-diet',{method:'POST',headers:{Authorization:'Bearer demo-token'}});
     const first=await authorizeAndLimit(request,env,'diet');
     assert.equal(first.userId,'user-1');
-    const second=await authorizeAndLimit(request,env);
+    const second=await authorizeAndLimit(request,env,'diet');
     assert.equal(second.response.status,429);
   } finally{globalThis.fetch=original;}
 });
