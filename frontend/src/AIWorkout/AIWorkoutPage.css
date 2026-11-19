@@ -30,10 +30,9 @@
   color: var(--ink);
   font: 15px/1.5 var(--body);
   padding-bottom: 90px;
-  max-width: 100%;
 }
 
-/* ---------- Page header ---------- */
+/* ---------- Page header (matches dashboard greeting) ---------- */
 .aw .brand { max-width: 1240px; margin: 0 auto 28px; }
 .aw .brand .eyebrow {
   margin: 0;
@@ -52,7 +51,7 @@
 }
 .aw .brand h1 {
   color: var(--ink);
-  font: 700 clamp(28px, 5vw, 36px)/1.15 var(--display);
+  font: 700 36px/1.15 var(--display);
   letter-spacing: -0.01em;
   margin: 6px 0 4px;
 }
@@ -62,11 +61,11 @@
   max-width: 1240px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  grid-template-columns: 360px 1fr;
   gap: 28px;
   align-items: start;
 }
-@media (max-width: 900px) { .aw .wrap { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+@media (max-width: 900px) { .aw .wrap { grid-template-columns: 1fr; } }
 
 /* ---------- Form rail ---------- */
 .aw .rail {
@@ -80,9 +79,8 @@
   padding: 24px;
   position: sticky;
   top: 20px;
-  min-width: 0;
 }
-@media (max-width: 900px) { .aw .rail { position: static; padding: 18px; } }
+@media (max-width: 900px) { .aw .rail { position: static; } }
 
 .aw fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .aw legend, .aw .lbl {
@@ -113,7 +111,6 @@
 
 .aw input[type="text"], .aw input[type="password"], .aw textarea, .aw select {
   width: 100%;
-  min-width: 0;
   font: inherit;
   color: var(--ink);
   background: var(--surface);
@@ -128,7 +125,7 @@
 }
 
 .aw .range-row { display: flex; align-items: center; gap: 14px; }
-.aw .range-row input { flex: 1; min-width: 0; accent-color: var(--hero-bg); }
+.aw .range-row input { flex: 1; accent-color: var(--hero-bg); }
 .aw .range-row output {
   font: 700 22px/1 var(--display);
   min-width: 72px;
@@ -212,12 +209,12 @@
   padding: 28px;
 }
 .aw .hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-.aw .hero-head { min-width: 0; flex: 1 1 240px; }
+.aw .hero-head { min-width: 0; }
 .aw .hero-eyebrow { color: var(--accent); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; margin: 0 0 8px; }
-.aw .hero h2 { font: 600 clamp(24px, 4.5vw, 32px)/1.15 var(--display); color: var(--hero-text); margin: 0; text-wrap: balance; }
+.aw .hero h2 { font: 600 32px/1.15 var(--display); color: var(--hero-text); margin: 0; text-wrap: balance; }
 .aw .summary { color: var(--hero-muted); margin: 10px 0 0; max-width: 62ch; }
 
-.aw .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.aw .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .aw .pill {
   border-radius: 999px;
   padding: 10px 16px;
@@ -242,12 +239,12 @@
   gap: 4px;
   min-width: 0;
 }
-.aw .stat b { font: 700 24px/1.1 var(--display); color: var(--hero-text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.aw .stat b.small { font-size: 15px; line-height: 1.5; }
+.aw .stat b { font: 700 26px/1.1 var(--display); color: var(--hero-text); font-variant-numeric: tabular-nums; }
+.aw .stat b.small { font-size: 16px; line-height: 1.6; }
 .aw .stat span { font-size: 12px; color: var(--hero-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 
-.aw .progress-row { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--hero-muted); flex-wrap: wrap; }
-.aw .progress { flex: 1; min-width: 140px; height: 8px; background: rgba(244, 246, 238, 0.15); border-radius: 999px; overflow: hidden; }
+.aw .progress-row { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--hero-muted); }
+.aw .progress { flex: 1; height: 8px; background: rgba(244, 246, 238, 0.15); border-radius: 999px; overflow: hidden; }
 .aw .progress i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 999px; transition: width 0.3s; }
 
 .aw .card {
@@ -256,9 +253,8 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   padding: 8px 28px 24px;
-  min-width: 0;
 }
-@media (max-width: 560px) { .aw .hero, .aw .card { padding-inline: 16px; } }
+@media (max-width: 560px) { .aw .hero, .aw .card { padding-inline: 18px; } }
 
 .aw .sec { margin-top: 22px; }
 .aw .sec h3 {
@@ -268,7 +264,6 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
 }
 .aw .sec h3 small {
   font: 600 12px/1 var(--body);
@@ -285,7 +280,7 @@
 
 .aw .ex {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-columns: 28px 1fr auto;
   gap: 14px;
   align-items: start;
   padding: 14px;
@@ -293,19 +288,6 @@
   background: var(--bg);
   border-radius: var(--radius-md);
 }
-@media (max-width: 520px) {
-  .aw .ex {
-    grid-template-columns: 28px minmax(0, 1fr);
-  }
-  .aw .rx {
-    grid-column: 2;
-    text-align: left;
-    align-items: flex-start;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-}
-
 .aw .check {
   width: 26px;
   height: 26px;
@@ -323,7 +305,7 @@
 .aw .ex.done .check { background: var(--done); border-color: var(--done); color: #fff; }
 .aw .ex.done .ex-name { text-decoration: line-through; color: var(--ink-soft); }
 .aw .ex-body { min-width: 0; }
-.aw .ex-name { font-weight: 600; overflow-wrap: anywhere; }
+.aw .ex-name { font-weight: 600; }
 .aw .cue { color: var(--ink-soft); font-size: 14px; margin-top: 2px; }
 .aw .rx { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .aw .rx .sr { font: 700 17px/1.2 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -347,19 +329,17 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 40;
   background: var(--hero-bg);
   color: var(--hero-text);
-  padding: 12px max(14px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
+  padding: 14px max(16px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 18px;
   box-shadow: 0 -8px 24px rgba(20, 23, 15, 0.12);
 }
 .aw .timer > span { font-weight: 600; color: var(--hero-muted); }
-.aw .timer b { font: 700 28px/1 var(--display); font-variant-numeric: tabular-nums; min-width: 78px; text-align: center; }
+.aw .timer b { font: 700 34px/1 var(--display); font-variant-numeric: tabular-nums; min-width: 90px; text-align: center; }
 .aw .timer button {
   background: transparent;
   border: 1px solid rgba(244, 246, 238, 0.35);
@@ -374,6 +354,10 @@
 
 @media (prefers-reduced-motion: reduce) { .aw * { transition: none !important; } }
 
+
+
+
+
 /* ---------- Workout CRUD: editor, messages, saved state ---------- */
 .aw .hint { margin: 0; font-size: 13px; color: var(--ink-soft); }
 
@@ -381,6 +365,9 @@
 .aw .flash--ok { background: rgba(208, 231, 157, 0.18); color: var(--tint-green); }
 .aw .flash--err { background: rgba(244, 216, 211, 0.16); color: #ffd9d3; }
 
+.aw .actions { align-items: center; }
+
+/* inputs: shared by hero (dark) and card (light) */
 .aw .ed {
   width: 100%;
   min-width: 0;
@@ -392,9 +379,9 @@
   padding: 8px 10px;
 }
 .aw .ed:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.aw .ed-title { font: 600 22px/1.2 var(--display); margin-top: 6px; }
+.aw .ed-title { font: 600 24px/1.2 var(--display); margin-top: 6px; }
 .aw .ed-summary { margin-top: 12px; max-width: 62ch; min-height: 72px; resize: vertical; }
-.aw .ed-date { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--hero-muted); font-size: 13px; font-weight: 700; }
+.aw .ed-date { display: flex; align-items: center; gap: 10px; color: var(--hero-muted); font-size: 13px; font-weight: 700; }
 .aw .ed-date .ed { width: auto; }
 .aw .ed-stat { font-weight: 700; padding: 6px 8px; }
 .aw .ed-num { width: 84px; }
@@ -403,14 +390,14 @@
 .aw .ed-block-head > .ed { flex: 1 1 180px; font-weight: 600; }
 .aw .ed-inline { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); }
 
-.aw .ex-edit { grid-template-columns: minmax(0, 1fr) auto; }
+.aw .ex-edit { grid-template-columns: 1fr auto; }
 .aw .ex-fields { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .aw .ex-nums { display: flex; gap: 12px; flex-wrap: wrap; }
 .aw .ex-nums label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-soft); }
 
 .aw .ed-list { display: flex; flex-direction: column; gap: 8px; }
-.aw .ed-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) auto; gap: 8px; align-items: center; }
-@media (max-width: 560px) { .aw .ed-row { grid-template-columns: minmax(0, 1fr) auto; } .aw .ed-row .ed:nth-child(2) { grid-column: 1; } }
+.aw .ed-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
+@media (max-width: 560px) { .aw .ed-row { grid-template-columns: 1fr auto; } .aw .ed-row .ed:nth-child(2) { grid-column: 1; } }
 
 .aw .icon-btn {
   width: 32px; height: 32px; padding: 0;

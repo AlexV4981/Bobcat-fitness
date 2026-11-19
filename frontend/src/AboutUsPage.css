@@ -11,13 +11,12 @@
 }
 
 .about-container {
-  min-height: 100dvh;
+  min-height: 100vh;
   background-color: var(--about-bg);
   color: var(--about-ink);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   padding: 40px 24px 60px;
   box-sizing: border-box;
-  max-width: 100%;
 }
 
 /* ---------- Header & Vision Section ---------- */
@@ -37,7 +36,7 @@
 }
 
 .about-title {
-  font-size: clamp(24px, 5vw, 32px);
+  font-size: 32px;
   font-weight: 700;
   margin: 0 0 16px;
   color: var(--about-ink);
@@ -75,12 +74,13 @@
 
 .zigzag-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   align-items: start;
   padding-top: 20px;
 }
 
+/* Zig-Zag Positions */
 .cube-up {
   transform: translateY(0);
 }
@@ -89,6 +89,7 @@
   transform: translateY(36px);
 }
 
+/* Cube Card Styling */
 .member-cube {
   background: var(--about-surface);
   border: 1px solid var(--about-border);
@@ -100,7 +101,6 @@
   min-height: 250px;
   box-shadow: 0 1px 2px rgba(20, 23, 15, 0.04);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  min-width: 0;
 }
 
 .member-cube:hover {
@@ -149,7 +149,6 @@
   font-size: 12px;
   color: var(--about-ink);
   line-height: 1.4;
-  overflow-wrap: anywhere;
 }
 
 .linkedin-tag {
@@ -160,6 +159,7 @@
   padding-top: 8px;
 }
 
+/* Blank Slot Styling */
 .cube-blank {
   background: transparent;
   border: 2px dashed var(--about-border);
@@ -177,29 +177,15 @@
 /* ---------- Responsive Adjustments ---------- */
 @media (max-width: 1024px) {
   .zigzag-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    padding-top: 0;
+    grid-template-columns: repeat(3, 1fr);
   }
   .cube-down {
     transform: translateY(0);
   }
 }
 
-@media (max-width: 768px) {
-  .about-container {
-    padding: 20px 16px 40px;
-  }
-  .about-header {
-    margin-bottom: 28px;
-  }
-  .vision-card {
-    padding: 18px;
-  }
+@media (max-width: 640px) {
   .zigzag-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-  }
-  .member-cube {
-    min-height: auto;
+    grid-template-columns: 1fr;
   }
 }
