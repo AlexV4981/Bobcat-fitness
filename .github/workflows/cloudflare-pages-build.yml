@@ -8,6 +8,9 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/cloudflare-pages-build.yml'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
