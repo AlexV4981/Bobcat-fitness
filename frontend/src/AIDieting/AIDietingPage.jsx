@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { aiRequestHeaders } from '../lib/aiAuth.js';
 import { SAMPLE_WORKOUT } from '../AIWorkout/lib/sample';
 
 // Condenses any imported Workout Plan Object (Supabase workout_runs or AIWorkout SAMPLE_WORKOUT)
@@ -200,9 +201,9 @@ export default function AIDietingPage({ userGoal = 'Build Endurance' }) {
     if (!overrideMessage) setChatInput('');
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/ai-diet", {
+      const response = await fetch('/api/ai-diet', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await aiRequestHeaders(),
         body: JSON.stringify({
           fitness_goal: goal,
           workout_plan: userMessage,
@@ -241,10 +242,10 @@ export default function AIDietingPage({ userGoal = 'Build Endurance' }) {
         setTasks(prev => prev.map(t => t.id === 2 ? { ...t, completed: true } : t));
       }
     } catch (error) {
-      console.error("FastAPI Backend Link Warning:", error);
+      console.error("Nutrition assistant request failed:", error);
       setMessages(prev => [...prev, { 
         sender: 'ai', 
-        text: `⚠️ System Link Blocked: Unable to communicate with the Python network thread. Context: ${error.message}` 
+        text: `⚠️ Nutrition assistant unavailable: ${error.message}` 
       }]);
     } finally {
       setLoading(false);
